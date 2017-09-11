@@ -1,0 +1,17 @@
+○ kwater 관로 이상 감지 시스템에 사용되는 json 형식
+
+  learning_csv_path : 학습할 csv 경로
+
+  option : add, start, predict
+
+  checkpoint_name : 체크포인트 이름
+
+  checkpoint_path : 체크포인트 경로
+
+  epochs : 학습 진행 횟수
+
+  learning_rate : 학습률
+
+  learning_kind : 학습의 종류
+
+  
