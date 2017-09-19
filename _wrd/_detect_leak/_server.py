@@ -4,21 +4,45 @@
 
 from _thread import *
 import socket
-import os
 import server_test as so
+import wrd_tf_regression_dynamic_x_two as wrd
+import json
+import traceback
 
 def on_new_client(conn):
     try:
         while True:
-            data = conn.recv(1024)
+            print("server start")
+            try:
+                data = conn.recv(1024)
+            except Exception as e:
+                pass
             dec_data = data.decode()
-            print(dec_data)
-            print(os.path.dirname(dec_data))
+            dict_data = json.loads(dec_data)
+
+            cmd = dict_data["command"]
+
+            if cmd == "learning_start":
+                #result = so.test(dec_data, conn)
+                wrd.main(conn)
+                print(cmd)
+            elif cmd == "learning_add":
+                print(cmd)
+            elif cmd == "predict":
+                print(cmd)
+            else:
+                print("cmd nothing")
 
             result = so.test(dec_data, conn)
 
-            conn.send(result.encode())
+
+
+        conn.send("end".encode())
     except Exception as ex:
+        #print("Exception:", ex.value)
+        #conn.send("error".encode())
+        print("server exception:")
+        traceback.print_exc()
         print('close socket')
         pass
 
