@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import style
 
-from _wrd.cnn.cnn_ex_iris_perceptron import Perceptron
+from wrd.cnn.cnn_ex_iris_perceptron import Perceptron
 
 style.use('seaborn-talk')
 
