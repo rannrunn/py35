@@ -51,7 +51,8 @@ while True:
                     else:
                         dict[key] = json_all["m2m:cin"][key]
                 else:
-                    dict[key] = ""
+                    if key != "con":
+                        dict[key] = ""
 
             #print(json_all["m2m:cin"]["con"])
             json_con = json.loads(json_all["m2m:cin"]["con"].replace("\"\"temp\"","\",\"temp\""))
@@ -64,7 +65,8 @@ while True:
                         else:
                             dict[key] = json_con[key]
                     else:
-                        dict[key] = ""
+                        if key != "accero":
+                            dict[key] = ""
 
             if bool_accero:
                 for key in key_accero:
