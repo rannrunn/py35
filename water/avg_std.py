@@ -35,7 +35,7 @@ def getQuery(location, func):
 
     return query
 
-def main(location, time_start, time_end):
+def main(location, func, time_start, time_end):
     try:
         con = conn.getConnection()
         con.set_character_set('utf8')
@@ -44,17 +44,17 @@ def main(location, time_start, time_end):
         cur.execute('SET CHARACTER SET utf8;')
         cur.execute('SET character_set_connection=utf8;')
 
-        avg = 0
+        result = 0
 
         query = getQuery(location, func)
 
         cur.execute(query)
         result = cur.fetchall()
         if cur.rowcount != 0 and result[0]['AVG'] is not None:
-            avg = int(result[0]['AVG'])
+            result = int(result[0]['AVG'])
 
         #print('query:', query)
-        print('avg :', avg)
+        print(func ,':', result)
 
     except Exception as e:
         print('Ex :')
@@ -65,10 +65,10 @@ if __name__ == '__main__':
     # hongtong, seongsan_gimpo
     location = 'seongsan_gimpo'
     # AVG, STDDEV
-    func = 'STDDEV'
+    func = 'AVG'
     time_start = '2017-06-01 00:01:00'
     time_end = '2017-08-11 00:00:00'
-    main(location, time_start, time_end)
+    main(location, func, time_start, time_end)
 
 
 
