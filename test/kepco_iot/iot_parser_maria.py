@@ -9,7 +9,7 @@ start = time.time()
 
 con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
 cur = con.cursor(MySQLdb.cursors.DictCursor)
-table = 'TB_IOT_POLE_V1'
+table = 'TB_IOT_POLE_V3'
 dict_initial = {'file_name':'','time_id':'','sensor_id':'','pole_id':'','ri':'','pi':'','temp':'','humi':'','pitch':'','roll':'','ambient':'','uv':'','press':'','battery':'','period':'','current':'','shock':'','geomag_x':'','geomag_y':'','geomag_z':'','var_x':'','var_y':'','var_z':'','usn':'','ntc':'','uvc':''}
 columns = ','.join(dict_initial.keys())
 query_insert = 'insert into ' + table + '(' + columns + ') values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
