@@ -68,11 +68,14 @@ def main():
         cur.execute(query_two)
         for row in cur.fetchall():
             if float(row['HONGTONG']) > stddc_hongtong:
+                print(row['HONGTONG'], ':', stddc_hongtong)
                 cnt_nusu = cnt_nusu + 1
-            if float(row['SEONGSAN_GIMPO']) > stddc_hongtong:
+            if float(row['SEONGSAN_GIMPO']) > stddc_seongsan_gimpo:
+                print(row['SEONGSAN_GIMPO'], ':', stddc_seongsan_gimpo)
                 cnt_nusu = cnt_nusu + 1
 
-        if cnt_nusu == 5:
+        print('cnt_nusu:', cnt_nusu)
+        if cnt_nusu == 10:
             print('누수가 발생했습니다.')
 
         print('..')
