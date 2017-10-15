@@ -2,7 +2,6 @@
 
 from _thread import *
 import socket
-import server_test as so
 import water_regression as wr
 import json
 import traceback
