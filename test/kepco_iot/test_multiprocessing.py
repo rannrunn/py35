@@ -131,6 +131,8 @@ def parser(name):
 
 if __name__ == '__main__':
 
+    # names = ['t_SENSOR_XML_201604_test.dat']
+
     names = ['t_SENSOR_XML_201604_2274787.dat'
         ,'t_SENSOR_XML_201605_1895870.dat'
         ,'t_SENSOR_XML_201606_1371773.dat'
