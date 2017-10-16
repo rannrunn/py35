@@ -10,6 +10,8 @@ import time
 import traceback
 import threading
 import logging
+import os
+from multiprocessing import Process
 
 logging.basicConfig(level=logging.DEBUG, format='(%(threadName)-10s) %(message)s', )
 
@@ -17,7 +19,7 @@ def make_values_list(values_list, dict):
     values_list.append(tuple(dict.values()))
     return values_list
 
-def insert_execute(query_insert, values_list):
+def insert_execute(con, cur, query_insert, values_list):
     cur.executemany(query_insert, values_list)
     con.commit()
     # 인서트 마쳤으니 초기화
@@ -25,6 +27,19 @@ def insert_execute(query_insert, values_list):
     return values_list
 
 def parser(name):
+
+    con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
+    con.set_character_set('utf8')
+    cur = con.cursor(MySQLdb.cursors.DictCursor)
+    cur.execute('SET NAMES utf8;')
+    cur.execute('SET CHARACTER SET utf8;')
+    cur.execute('SET character_set_connection=utf8;')
+
+    start = time.time()
+
+    key_m2m = ["con","ri","pi","current","shock"]
+    key_con = ["accero","temp","humi","ambient","uv","press","battery","period","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc","current","shock"]
+    key_accero = ["pitch","roll","current","shock"]
 
     cnt = 0
     values_list = []
@@ -51,7 +66,7 @@ def parser(name):
         if not line:
             # 마지막 라인일 경우에 아직 INSERT 되지 않는 데이터에 대해 INSERT
             if cnt % 10000 != 0:
-                values_list = insert_execute(query_insert, values_list)
+                values_list = insert_execute(con, cur, query_insert, values_list)
                 print("file_name:", file_name, ",", "cnt:", cnt)
                 print('iot_parser_maria : Total time : %f' % (time.time() - start))
             break
@@ -107,57 +122,30 @@ def parser(name):
 
         cnt = cnt + 1
         if cnt % 10000 == 0:
-            values_list = insert_execute(query_insert, values_list)
+            values_list = insert_execute(con, cur, query_insert, values_list)
             print("file_name:", file_name, " , cnt:", cnt, " , past_time:", (time.time() - start))
 
     f.close()
 
-class MyThreadWithArgs(threading.Thread):
-
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, verbose=None):
-        #threading.Thread.__init__(self, group=group, target=target, name=name,
-        #                          verbose=verbose)
-        #verbose 가 있으면 동작하지 않아 삭제합니다.
-        threading.Thread.__init__(self, group=group, target=target, name=name)
-        self.args = args
-        self.kwargs = kwargs
-        return
-
-    def run(self):
-        logging.debug('running with %s', self.args)
-        parser(self.args)
-        return
 
 if __name__ == '__main__':
 
-    start = time.time()
-
-    con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
-    con.set_character_set('utf8')
-    cur = con.cursor(MySQLdb.cursors.DictCursor)
-    cur.execute('SET NAMES utf8;')
-    cur.execute('SET CHARACTER SET utf8;')
-    cur.execute('SET character_set_connection=utf8;')
-
-    key_m2m = ["con","ri","pi","current","shock"]
-    key_con = ["accero","temp","humi","ambient","uv","press","battery","period","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc","current","shock"]
-    key_accero = ["pitch","roll","current","shock"]
-
     names = ['t_SENSOR_XML_201604_2274787.dat'
-        ,'t_SENSOR_XML_201605_1895870.dat']
+        ,'t_SENSOR_XML_201605_1895870.dat'
+        ,'t_SENSOR_XML_201606_1371773.dat'
+        ,'t_SENSOR_XML_201607_4064409.dat'
+        ,'t_SENSOR_XML_201608_8218811.dat'
+        ,'t_SENSOR_XML_201609_7187682.dat'
+        ,'t_SENSOR_XML_201610_6699561.dat'
+        ,'t_SENSOR_XML_201611_5084265.dat'
+        ,'t_SENSOR_XML_201612_20170515_30571302.txt']
 
-    # names = ['t_SENSOR_XML_201604_2274787.dat'
-    #     ,'t_SENSOR_XML_201605_1895870.dat'
-    #     ,'t_SENSOR_XML_201606_1371773.dat'
-    #     ,'t_SENSOR_XML_201607_4064409.dat'
-    #     ,'t_SENSOR_XML_201608_8218811.dat'
-    #     ,'t_SENSOR_XML_201609_7187682.dat'
-    #     ,'t_SENSOR_XML_201610_6699561.dat'
-    #     ,'t_SENSOR_XML_201611_5084265.dat'
-    #     ,'t_SENSOR_XML_201612_20170515_30571302.txt']
+    procs = []
 
     for name in names:
-        t = MyThreadWithArgs(args=(name))
-        t.start()
-        break;
+        proc = Process(target=parser, args=(name,))
+        procs.append(proc)
+        proc.start()
+
+    for proc in procs:
+        proc.join()
