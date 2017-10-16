@@ -1,26 +1,33 @@
+# coding: utf-8
 # sensor_xml_data_20170515 자료에 맞게 소스 수정
+# sensor_xml_data_20170515 에 들어 있는 자료의 키는 모두 5개이다
 import xmltodict
 import json
 import datetime
 import os.path
 import MySQLdb
 import time
+import traceback
 
 start = time.time()
 
 con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
+con.set_character_set('utf8')
 cur = con.cursor(MySQLdb.cursors.DictCursor)
-table = 'TB_IOT_POLE_V3'
+cur.execute('SET NAMES utf8;')
+cur.execute('SET CHARACTER SET utf8;')
+cur.execute('SET character_set_connection=utf8;')
+
+table = 'TB_IOT_POLE_TWO'
 dict_initial = {'file_name':'','time_id':'','sensor_id':'','pole_id':'','part_name':'','ri':'','pi':'','temp':'','humi':'','pitch':'','roll':'','ambient':'','uv':'','press':'','battery':'','period':'','current':'','shock':'','geomag_x':'','geomag_y':'','geomag_z':'','var_x':'','var_y':'','var_z':'','usn':'','ntc':'','uvc':''}
 columns = ','.join(dict_initial.keys())
-query_insert = 'insert into ' + table + '(' + columns + ') values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)'
-print(query_insert)
+
 
 def make_values_list(values_list, dict):
     values_list.append(tuple(dict.values()))
     return values_list
 
-def insert_execute(values_list):
+def insert_execute(query_insert, values_list):
     cur.executemany(query_insert, values_list)
     con.commit()
 
@@ -32,27 +39,37 @@ def main():
     key_accero = ["pitch","roll","current","shock","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc"]
 
     cnt = 0
-    file_first = "C:/_data/data/sensor_"
-    file_date = "2017-06-20"
-    last_date = "2017-09-20"
     FMT = '%Y-%m-%d'
     values_list = []
 
-    while True:
-        file_name = file_first + file_date
+    names = ['t_SENSOR_XML_201604_2274787.dat'
+        ,'t_SENSOR_XML_201605_1895870.dat'
+        ,'t_SENSOR_XML_201606_1371773.dat'
+        ,'t_SENSOR_XML_201607_4064409.dat'
+        ,'t_SENSOR_XML_201608_8218811.dat'
+        ,'t_SENSOR_XML_201609_7187682.dat'
+        ,'t_SENSOR_XML_201610_6699561.dat'
+        ,'t_SENSOR_XML_201611_5084265.dat'
+        ,'t_SENSOR_XML_201612_20170515_30571302.txt']
 
-        if file_date == (datetime.datetime.strptime(last_date, FMT) + datetime.timedelta(days=1)).strftime(FMT):
-            break
-        if os.path.exists(file_name) == False:
-            break
+    for name in names:
+        # 파일명을 변경해 가면서 인서트
+        file_name = 'G:/sensor_xml_data_20170515.tar/sensor_xml_data_20170515/'+ name
 
-        f = open(file_name, 'r')
+        if not os.path.exists(file_name):
+            continue
+
+        table = 'tb_iot_pole_' + name[13:19]
+        query_insert = "insert into " + table + "(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+
+        f = open(file_name, 'rt', encoding='UTF8')
         #print(file_name)
         while True:
+
             line = f.readline()
             if not line:
                 # 마지막 파일일 경우에 아직 INSERT 되지 않는 데이터에 대해 INSERT
-                if cnt % 10000 != 0 and file_date == last_date:
+                if cnt % 10000 != 0:
                     insert_execute(values_list)
                     print("last_file_name:", file_name, ",", "cnt:", cnt)
                 break
@@ -65,18 +82,16 @@ def main():
             dict["file_name"] = os.path.basename(file_name)
 
             line_split = line[:line.index('<')].split(',')
-            # KEY 개수가 같을 경우 KEY 들의 위치는 달라지지 않을 것이라는 가정 하에 소스 작성
-            if len(line_split) == 3:
-                dict["time_id"] = line_split[2]
-                dict["sensor_id"] = line_split[0]
-                dict["pole_id"] = line_split[1]
-            elif len(line_split) == 4:
-                dict["time_id"] = line_split[3]
-                dict["sensor_id"] = line_split[0]
-                dict["pole_id"] = line_split[1]
-                dict["part"] = line_split[2]
 
-            line_xml = line[line.index('<'):]
+            dict["time_id"] = line_split[3].replace('"',"")
+            dict["sensor_id"] = line_split[0].replace('"',"")
+            dict["pole_id"] = line_split[1].replace('"',"")
+            dict["part_name"] = line_split[2].replace('"',"")
+
+            line_xml = line[line.index('<'):-2]
+            line_xml = line_xml.replace('""', '"')
+            line_xml = line_xml.replace(',,', ',')
+
             root = xmltodict.parse(line_xml)
             resp = json.dumps(root)
             json_all = json.loads(resp)
@@ -92,7 +107,9 @@ def main():
                         dict[key] = ""
 
             #print(json_all["m2m:cin"]["con"])
-            json_con = json.loads(json_all["m2m:cin"]["con"].replace("\"\"temp\"","\",\"temp\""))
+            json_con = {}
+            if bool(json_all["m2m:cin"]["con"]):
+                json_con = json.loads(json_all["m2m:cin"]["con"].replace("\"\"temp\"","\",\"temp\""))
 
             if bool_con:
                 for key in key_con:
@@ -118,14 +135,12 @@ def main():
 
             cnt = cnt + 1
             if cnt % 10000 == 0:
-                insert_execute(values_list)
+                insert_execute(query_insert, values_list)
                 values_list = []
                 print("file_name:", file_name, ",", "cnt:", cnt)
                 print('iot_parser_maria : Total time : %f' % (time.time() - start))
 
         f.close()
-
-        file_date = (datetime.datetime.strptime(file_date, FMT) + datetime.timedelta(days=1)).strftime(FMT)
 
 
 if __name__ == '__main__':
