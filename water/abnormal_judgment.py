@@ -23,7 +23,7 @@ def main():
         # LIMIT 5
         query_one = "\n SELECT COUNT(TIMESTAMP) AS CNT" \
                     + "\n FROM TB_WATER" \
-                    + "\n WHERE TIMESTAMP BETWEEN ADDTIME('%s', '-00:05:00') AND '%s'" % (time, time) \
+                    + "\n WHERE TIMESTAMP BETWEEN ADDTIME('%s', '-00:04:00') AND '%s'" % (time, time) \
                     + comm.getWhere('COMMON') \
                     + comm.getWhere('HONGTONG') \
                     + comm.getWhere('SEONGSAN_GIMPO')
@@ -40,19 +40,12 @@ def main():
 
         dict = getData()
 
-        avg_hongtong = 0
-        stddev_hongtong = 0
         stddc_hongtong = 0
-        avg_seongsan_gimpo = 0
-        stddev_seongsan_gimpo = 0
         stddc_seongsan_gimpo = 0
 
         if bool(dict):
-            avg_hongtong = float(dict['AVG_HONGTONG'])
-            stddev_hongtong = float(dict['STDDEV_HONGTONG'])
+
             stddc_hongtong = float(dict['STDDC_HONGTONG'])
-            avg_seongsan_gimpo = float(dict['AVG_SEONGSAN_GIMPO'])
-            stddev_seongsan_gimpo = float(dict['STDDEV_SEONGSAN_GIMPO'])
             stddc_seongsan_gimpo = float(dict['STDDC_SEONGSAN_GIMPO'])
             print(dict)
 
@@ -86,7 +79,7 @@ def main():
 
 if __name__ == '__main__':
 
-    time = '2017-06-01 00:05:00'
+    time = '2017-06-01 00:06:00'
     time_start = '2017-06-01 00:01:00'
     time_end = '2017-08-11 00:00:00'
 
