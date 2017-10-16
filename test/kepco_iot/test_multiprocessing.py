@@ -42,6 +42,7 @@ def parser(name):
     key_accero = ["pitch","roll","current","shock"]
 
     cnt = 0
+    cnt_batch = 10000
     values_list = []
 
     dict_initial = {'file_name':'','time_id':'','sensor_id':'','pole_id':'','part_name':'','ri':'','pi':'','temp':'','humi':'','pitch':'','roll':'','ambient':'','uv':'','press':'','battery':'','period':'','current':'','shock':'','geomag_x':'','geomag_y':'','geomag_z':'','var_x':'','var_y':'','var_z':'','usn':'','ntc':'','uvc':''}
@@ -65,10 +66,9 @@ def parser(name):
         line = f.readline()
         if not line:
             # 마지막 라인일 경우에 아직 INSERT 되지 않는 데이터에 대해 INSERT
-            if cnt % 10000 != 0:
+            if cnt % cnt_batch != 0:
                 values_list = insert_execute(con, cur, query_insert, values_list)
-                print("file_name:", file_name, ",", "cnt:", cnt)
-                print('iot_parser_maria : Total time : %f' % (time.time() - start))
+                print("file_name:", file_name, " , cnt:", cnt, " , past_time:", (time.time() - start))
             break
 
         dict = dict_initial
@@ -121,7 +121,7 @@ def parser(name):
         values_list = make_values_list(values_list, dict)
 
         cnt = cnt + 1
-        if cnt % 10000 == 0:
+        if cnt % cnt_batch == 0:
             values_list = insert_execute(con, cur, query_insert, values_list)
             print("file_name:", file_name, " , cnt:", cnt, " , past_time:", (time.time() - start))
 
