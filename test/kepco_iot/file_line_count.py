@@ -1,7 +1,6 @@
 import os
 import datetime
 
-
 file_first = "G:/MariaDB/kepco_iot/data/sensor_"
 file_date = '2017-06-20'
 last_date_add_one = "2017-09-21"
