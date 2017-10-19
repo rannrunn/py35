@@ -49,7 +49,7 @@ def parser(name):
     columns = ','.join(dict_initial.keys())
 
     # 파일명을 변경해 가면서 인서트
-    file_name = 'E:/sensor_xml_data_20170515.tar/sensor_xml_data_20170515/'+ name
+    file_name = 'D:/010_data/kepco/iot_pole/2nd/'+ name
 
     if not os.path.exists(file_name):
         return
@@ -86,6 +86,7 @@ def parser(name):
         line_xml = line[line.index('<'):].replace('</m2m:cin>"', '</m2m:cin>')
         line_xml = line_xml.replace('""', '"')
         line_xml = line_xml.replace(',,', ',')
+        line_xml = line_xml.replace(',}', '}')
 
         root = xmltodict.parse(line_xml)
         resp = json.dumps(root)
