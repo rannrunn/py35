@@ -4,7 +4,7 @@ import dbconnection as conn
 import traceback
 import common as comm
 
-def getQueryQuartileCNT(ratio):
+def getQueryCNT(ratio):
     query =  "\nSELECT CONVERT((COUNT(D_PALDANG) * %s/100) - 1, INT) AS CNT" % (ratio) \
             + "\n  FROM TB_WATER" \
             + "\n  WHERE 1 = 1" \
@@ -51,7 +51,7 @@ def getQueryAvgStddev(location, func, quartile1, quartile3):
 
 def getQuartileCNT(quar):
     result = 0
-    cur.execute(getQueryQuartileCNT(quar * 25))
+    cur.execute(getQueryCNT(quar * 25))
     tuple = cur.fetchall()
     if cur.rowcount != 0 and tuple[0]['CNT'] is not None:
         result = int(tuple[0]['CNT'])
@@ -78,7 +78,7 @@ def getRatioDischarge(location, part):
     elif part == 3:
         partRatio = 100 - ratio
 
-    cur.execute(getQueryQuartileCNT(partRatio))
+    cur.execute(getQueryCNT(partRatio))
     tuple = cur.fetchall()
     if cur.rowcount != 0 and tuple[0]['CNT'] is not None:
         cnt_quartile = int(tuple[0]['CNT'])
@@ -175,7 +175,7 @@ def main():
 if __name__ == '__main__':
     time_start = '2017-06-01 00:01:00'
     time_end = '2017-08-11 00:00:00'
-    ratio = 1
+    ratio = 10
 
     con = conn.getConnection()
     con.set_character_set('utf8')
