@@ -175,7 +175,7 @@ def main():
 if __name__ == '__main__':
     time_start = '2017-06-01 00:01:00'
     time_end = '2017-08-11 00:00:00'
-    ratio = 10
+    ratio = 0.1
 
     con = conn.getConnection()
     con.set_character_set('utf8')
