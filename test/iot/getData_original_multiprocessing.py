@@ -241,11 +241,13 @@ def saveimage(filename):
     ax6.plot(tt['battery'])
     ax1.set_ylabel('TEMP')
     ax1.set_xlim(dstart, dend)
+    ax1.set_ylim( [-25,60] )
     ax2.set_ylabel('HUMI')
     ax2.set_xlim(dstart, dend)
+    ax2.set_ylim( [-10,110] )
     ax3.set_ylabel('PITCH')
     ax3.set_xlim(dstart, dend)
-    ax3.set_ylim( [-100,100] )
+    ax3.set_ylim( [-190,190] )
     ax4.set_ylabel('ROLL')
     ax4.set_xlim(dstart, dend)
     ax4.set_ylim( [-100,100] )
@@ -254,7 +256,7 @@ def saveimage(filename):
     ax5.set_ylim( [-1.1,1.1] )
     ax6.set_ylabel('BATTERY')
     ax6.set_xlim(dstart, dend)
-    ax6.set_ylim( [0,110] )
+    ax6.set_ylim( [-10,110] )
     fig.savefig('c:/png/'+pole_id+'.png', format='png')
 
 if __name__ == '__main__':

@@ -44,21 +44,21 @@ def which(data, value):
         print("The elements in two list are not identical")
 
 def setDataPath(abs_path):
-    os.chdir(abs_path)
+        os.chdir(abs_path)
 # /////////////////////////////////////////////////////////////
 #                   get pole_id list
 # /////////////////////////////////////////////////////////////
 
-setDataPath("c:/getData")
-pole_id_list = pd.read_csv("pole_id.csv")
-pole_id_list = list(pole_id_list['pole_id'])
+# setDataPath("c:/getData")
+# pole_id_list = pd.read_csv("pole_id.csv")
+# pole_id_list = list(pole_id_list['pole_id'])
 
 
 
 # // output: pandas dataframe
 
 # // directory (pole data)
-setDataPath("g:/pole_id_data_all")
+setDataPath("D:\\dev\\py_data\\pole_id_data2")
 
 
 
@@ -73,7 +73,7 @@ def getData(pole_id, partName_Index, variableName, period, startTime=0, endTime=
     data = pd.read_csv(tmp_fileName, encoding='utf-8')
     data.rename(columns={'Unnamed: 0': 'id'}, inplace=True) # colname 변경
     columns_Order = ['sensor_id', 'time_id', 'temp', 'humi', 'ambient',
-                     'battery', 'current', 'press', 'shock', 'uv', 'pitch', 'roll']
+                    'battery', 'current', 'press', 'shock', 'uv', 'pitch', 'roll']
 
     colIndex = which(data, columns_Order)
     data = data.iloc[:, colIndex]
@@ -148,6 +148,8 @@ def getData(pole_id, partName_Index, variableName, period, startTime=0, endTime=
     # /////////////////////////////////////////////////////////////
     sensor_id_unique = list(data.sensor_id.unique())
     sensor_id_Index_tmp = partName_Index
+    print(partName_Index)
+    print(sensor_id_unique[partName_Index])
     data_withOneSensor_tmp = data.loc[data['sensor_id'] == sensor_id_unique[sensor_id_Index_tmp], :] #
     data_withOneSensor_tmp['time_id'] = pd.to_datetime(data_withOneSensor_tmp['time_id']) # change type of time variable
 
@@ -208,108 +210,178 @@ def saveimage(filename):
     # /////////////////////////////////////////////////////////////
     # // input: parameters
     # pole_id = pole_id_list[0]
-    partName_Index = 0
-    variableName = ['temp', 'humi'] # 'temp' # 'temp' or ['temp', 'humi']
-    period = '1D' # 1Min/ 1H/ 1D/ 1M
-    startTime = 0 # default = 0: first date
-    endTime = 0   # default = 0: last  date
+    # partName_Index = 0
+    # variableName = ['temp'] # 'temp' # 'temp' or ['temp', 'humi']
+    # period = '1D' # 1Min/ 1H/ 1D/ 1M
+    # startTime = 0 # default = 0: first date
+    # endTime = 0   # default = 0: last  date
 
     pole_id = filename.split('.')[0]
+
+    partName_Index = 0
+    variableName = ['temp']  # 'temp' # 'temp' or ['temp', 'humi']
+    period = '1D'  # 1Min/ 1H/ 1D/ 1M
+    startTime = 0  # default = 0: first date
+    endTime = 0  # default = 0: last  date
     # # // code example
-    tt = getData(pole_id = pole_id,
+    tt1 = getData(pole_id = pole_id,
                  partName_Index = partName_Index,
                  variableName = variableName,
                  period = period,
                  startTime = startTime,
                  endTime = endTime)
+
+    partName_Index = 1
+    variableName = ['temp']  # 'temp' # 'temp' or ['temp', 'humi']
+    period = '1D'  # 1Min/ 1H/ 1D/ 1M
+    startTime = 0  # default = 0: first date
+    endTime = 0  # default = 0: last  date
+    tt2 = getData(pole_id=pole_id,
+                 partName_Index=partName_Index,
+                 variableName=variableName,
+                 period=period,
+                 startTime=startTime,
+                 endTime=endTime)
+
+    partName_Index = 2
+    variableName = ['temp']  # 'temp' # 'temp' or ['temp', 'humi']
+    period = '1D'  # 1Min/ 1H/ 1D/ 1M
+    startTime = 0  # default = 0: first date
+    endTime = 0  # default = 0: last  date
+    tt3 = getData(pole_id=pole_id,
+                 partName_Index=partName_Index,
+                 variableName=variableName,
+                 period=period,
+                 startTime=startTime,
+                 endTime=endTime)
+
+    tt_all=[tt1, tt2, tt3]
+    tt4=pd.concat(tt_all)
+
     # type(tt)
     dstart = datetime.datetime(2016,4,1)
     dend = datetime.datetime(2017,5,31)
-    fig = plt.figure(figsize=(15, 10))
-    ax1 = fig.add_subplot(6, 1, 1)
-    ax2 = fig.add_subplot(6, 1, 2)
-    ax3 = fig.add_subplot(6, 1, 3)
-    ax4 = fig.add_subplot(6, 1, 4)
-    ax5 = fig.add_subplot(6, 1, 5)
-    ax6 = fig.add_subplot(6, 1, 6)
+
+    fig = plt.figure(figsize=(15, 13))
+    ax1 = fig.add_subplot(4, 1, 1)
+    ax2 = fig.add_subplot(4, 1, 2)
+    ax3 = fig.add_subplot(4, 1, 3)
+    ax4 = fig.add_subplot(4, 1, 4)
     fig.suptitle(pole_id)
-    ax1.plot(tt['temp'])
-    ax2.plot(tt['humi'])
-    ax3.plot(tt['pitch'])
-    ax4.plot(tt['roll'])
-    ax5.plot(tt['shock'])
-    ax6.plot(tt['battery'])
+    ax1.plot(tt1['temp'])
+    ax2.plot(tt2['temp'])
+    ax3.plot(tt3['temp'])
+    ax4.plot(tt4['temp'])
+
+    ax1.set_title()
     ax1.set_ylabel('TEMP')
     ax1.set_xlim(dstart, dend)
-    ax2.set_ylabel('HUMI')
+    ax1.set_ylim( [-25,60] )
+
+    ax2.set_ylabel('TEMP')
     ax2.set_xlim(dstart, dend)
-    ax3.set_ylabel('PITCH')
+    ax2.set_ylim( [-25,60] )
+
+    ax3.set_ylabel('TEMP')
     ax3.set_xlim(dstart, dend)
-    ax3.set_ylim( [-100,100] )
-    ax4.set_ylabel('ROLL')
+    ax3.set_ylim( [-25,60] )
+
+    ax4.set_ylabel('TEMP')
     ax4.set_xlim(dstart, dend)
-    ax4.set_ylim( [-100,100] )
-    ax5.set_ylabel('SHOCK')
-    ax5.set_xlim(dstart, dend)
-    ax5.set_ylim( [-1.1,1.1] )
-    ax6.set_ylabel('BATTERY')
-    ax6.set_xlim(dstart, dend)
-    ax6.set_ylim( [0,110] )
-    fig.savefig('c:/png/'+pole_id+'.png', format='png')
+    ax4.set_ylim([-25, 60])
+
+    fig.savefig('D:\\dev\\py_data\\result\\' + pole_id + '.png', format='png')
+
+    # fig = plt.figure(figsize=(15, 10))
+    # ax1 = fig.add_subplot(6, 1, 1)
+    # ax2 = fig.add_subplot(6, 1, 2)
+    # ax3 = fig.add_subplot(6, 1, 3)
+    # ax4 = fig.add_subplot(6, 1, 4)
+    # ax5 = fig.add_subplot(6, 1, 5)
+    # ax6 = fig.add_subplot(6, 1, 6)
+    # fig.suptitle(pole_id)
+    # ax1.plot(tt['temp'])
+    # ax2.plot(tt['humi'])
+    # ax3.plot(tt['pitch'])
+    # ax4.plot(tt['roll'])
+    # ax5.plot(tt['shock'])
+    # ax6.plot(tt['battery'])
+    # ax1.set_ylabel('TEMP')
+    # ax1.set_xlim(dstart, dend)
+    # ax1.set_ylim( [-25,60] )
+    # ax1.get_xlabel('0')
+    # ax2.set_ylabel('HUMI')
+    # ax2.set_xlim(dstart, dend)
+    # ax2.set_ylim( [-10,110] )
+    # ax3.set_ylabel('PITCH')
+    # ax3.set_xlim(dstart, dend)
+    # ax3.set_ylim( [-100,100] )
+    # ax4.set_ylabel('ROLL')
+    # ax4.set_xlim(dstart, dend)
+    # ax4.set_ylim( [-100,100] )
+    # ax5.set_ylabel('SHOCK')
+    # ax5.set_xlim(dstart, dend)
+    # ax5.set_ylim( [-1.1,1.1] )
+    # ax6.set_ylabel('BATTERY')
+    # ax6.set_xlim(dstart, dend)
+    # ax6.set_ylim( [-10,110] )
+    # fig.savefig('D:\\dev\\py_data\\result\\pole_6_100\\' + pole_id + '.png', format='png')
 
 if __name__ == '__main__':
+    filenames=['8232P471']
 
-    filenames = ['8132Z815',
-                 '8132X915',
-                 '8132X262',
-                 '8132X485',
-                 '8132W951',
-                 '8132X672',
-                 '8132X473',
-                 '8132X581',
-                 '8132X502',
-                 '8132X142',
-                 '8132D823',
-                 '8132X343',
-                 '8132X671',
-                 '8132W551',
-                 '8232P171',
-                 '8132Z752',
-                 '8132X951',
-                 '8132X474',
-                 '8232P041',
-                 '8132Z632',
-                 '8132Z534',
-                 '8132W621',
-                 '8132W832',
-                 '8132W811',
-                 '8132Z092',
-                 '8132Z531',
-                 '8132X122',
-                 '8232R131',
-                 '8232R142',
-                 '8132Q923',
-                 '8232R151',
-                 '8232R073',
-                 '8232R061',
-                 '8132Q942',
-                 '8132Z825',
-                 '8132W212',
-                 '8132Z813',
-                 '8132Z944',
-                 '8132W231',
-                 '8132X692',
-                 '8232R471',
-                 '8132W133',
-                 '8132X782',
-                 '8132Z762',
-                 '8132W081',
-                 '8132X201',
-                 '8132W821',
-                 '8132X021',
-                 '8232R071',
-                 '8132W611'
-                 ]
+    # filenames = ['8232P471',
+    #              '8132G005',
+    #              '8132X914',
+    #              '8132W952',
+    #              '8132X152',
+    #              '8232P531',
+    #              '8132X921',
+    #              '8232P142',
+    #              '8232P371',
+    #              '8132X783',
+    #              '8232P345',
+    #              '8132W981',
+    #              '8132X601',
+    #              '8132X391',
+    #              '8132X171',
+    #              '8132X291',
+    #              '8132X761',
+    #              '8132Q911',
+    #              '8132W122',
+    #              '8132W782',
+    #              '8232R152',
+    #              '8132Z961',
+    #              '8132Z763',
+    #              '8232R383',
+    #              '8232P472',
+    #              '8132X402',
+    #              '8232P544',
+    #              '8132X361',
+    #              '8132X362',
+    #              '8132G101',
+    #              '8132X506',
+    #              '8132X464',
+    #              '8132X815',
+    #              '8232P571',
+    #              '8132W162',
+    #              '8132X831',
+    #              '8232P042',
+    #              '8132X916',
+    #              '8132Z814',
+    #              '8132Q903',
+    #              '8232R121',
+    #              '8232R372',
+    #              '8232R242',
+    #              '8232R432',
+    #              '8232P542',
+    #              '8132D824',
+    #              '8132G511',
+    #              '8132G512',
+    #              '8132X681',
+    #              '8132X272']
+
+
     # for filename in os.listdir('C:/pole_id_data_all'):
     #     filenames.append(filename)
 
