@@ -1,31 +1,26 @@
 # coding: utf-8
-import matplotlib.pyplot as plt
-from matplotlib import font_manager, rc
-import MySQLdb
 import time
 import datetime
+import MySQLdb
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os, sys
-import multiprocessing as mp
+from matplotlib import font_manager, rc
 
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
 
 # SELECT 하는 방법
 def select(table, cur, pole_id, time_start, time_end):
-    query = """SELECT DATE_FORMAT(CONCAT(CONVERT(COLUMN_MINUTE, CHAR(16)), '00'), '%%Y-%%m-%%d %%H:%%i') AS COLUMN_MINUTE,POLE_ID,BB_AVG_TEMP,BG_AVG_TEMP,WG_AVG_TEMP,JJ_AVG_TEMP,TH_AVG_TEMP 
+    query = """SELECT DATE_FORMAT(CONCAT(CONVERT(COLUMN_MINUTE, CHAR(16)), '00'), '%%Y-%%m-%%d %%H:%%i:%%s') AS COLUMN_MINUTE,POLE_ID,BB_AVG_TEMP,BG_AVG_TEMP,WG_AVG_TEMP,JJ_AVG_TEMP,TH_AVG_TEMP 
                 FROM TB_IOT_POLE_MINUTE_AVG_TEMP 
                 WHERE POLE_ID = '%s' AND COLUMN_MINUTE BETWEEN '%s' AND '%s'  
                 ORDER BY COLUMN_MINUTE""" % (pole_id, time_start, time_end)
-    print(query)
     cur.execute(query);
     results = cur.fetchall()
-    list = []
-    for row in results:
-        list.append(row)
-
-    return list
+    df_query = pd.DataFrame(list(results))
+    df_query = df_query.set_index(pd.to_datetime(df_query['COLUMN_MINUTE']))
+    return df_query
 
 def make_x_arange(x_src, interval):
     return np.arange(min(x_src), max(x_src)+1, interval)
@@ -41,7 +36,7 @@ def set_subplot(axes, axes_name, axes_data, x_sequence, x_arange, x_ticks, axes_
     axes.set_xticks(x_arange)
     axes.set_xticklabels(x_ticks)
     axes.set_ylabel(axes_name)
-    axes.set_ylim( [axes_xlim, axes_ylim] )
+    axes.set_ylim([axes_xlim, axes_ylim])
 
 def saveimage(filename):
     pass
@@ -57,36 +52,32 @@ if __name__ == '__main__':
     cur.execute('SET CHARACTER SET utf8;')
     cur.execute('SET character_set_connection=utf8;')
 
+
     list_key = ['COLUMN_MINUTE','POLE_ID','BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']
 
 
     table = 'TB_IOT_POLE_MINUTE_AVG_TEMP'
+
 
     pole_id = '8132W133'
     time_date = '20161112'
     time_start = time_date + '0000'
     time_end = time_date + '2359'
 
-    list_sel = select(table, cur, pole_id, time_start, time_end)
 
-    df = pd.DataFrame(list_sel)
-    COLUMN_MINUTE = df.COLUMN_MINUTE.values
-    BB_AVG_TEMP = df.BB_AVG_TEMP.values
-    BG_AVG_TEMP = df.BG_AVG_TEMP.values
-    WG_AVG_TEMP = df.WG_AVG_TEMP.values
-    JJ_AVG_TEMP = df.JJ_AVG_TEMP.values
-    TH_AVG_TEMP = df.TH_AVG_TEMP.values
+    df_query = select(table, cur, pole_id, time_start, time_end)
+    df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']] = df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].astype('float64')
+    df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']] = df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].interpolate()
 
-    print(COLUMN_MINUTE)
-    x_sequence = [i for i in range(len(COLUMN_MINUTE))]
-    print(x_sequence)
-    print(len(x_sequence))
-    print(type(BB_AVG_TEMP))
-    print(BB_AVG_TEMP.shape)
+    df_3t = df_query.resample('3T').max()
+    df_diff = df_3t['BB_AVG_TEMP'] - df_3t['JJ_AVG_TEMP']
 
-    x_arange_top = make_x_arange(x_sequence, 180)
-    x_ticks_top = make_x_tick(COLUMN_MINUTE, x_arange_top)
-    fig = plt.figure(figsize=(15, 13))
+    x_sequence = [i for i in range(len(df_3t['COLUMN_MINUTE']))]
+
+    x_arange = make_x_arange(x_sequence, 180)
+    x_ticks_no = ['' for i in range(len(x_arange))]
+    x_ticks = make_x_tick(df_3t['COLUMN_MINUTE'], x_arange)
+    fig = plt.figure(figsize=(15, 10))
     ax1 = fig.add_subplot(10, 1, 1)
     ax2 = fig.add_subplot(10, 1, 2)
     ax3 = fig.add_subplot(10, 1, 3)
@@ -95,27 +86,18 @@ if __name__ == '__main__':
     ax6 = fig.add_subplot(2, 1, 2)
     fig.suptitle(pole_id)
     # axes, axes_name, axes_data, x_sequence, x_arange, x_ticks, axes_xlim, axes_ylim
-    set_subplot(ax1, '변압기 본체',BB_AVG_TEMP, x_sequence, x_arange_top, ['' for i in range(len(x_arange_top))], -20, 55)
-    set_subplot(ax2, '부하 개폐기',BG_AVG_TEMP, x_sequence, x_arange_top, ['' for i in range(len(x_arange_top))], -20, 55)
-    set_subplot(ax3, '완금',WG_AVG_TEMP, x_sequence, x_arange_top, ['' for i in range(len(x_arange_top))], -20, 55)
-    set_subplot(ax4, '전주',JJ_AVG_TEMP, x_sequence, x_arange_top, ['' for i in range(len(x_arange_top))], -20, 55)
-    set_subplot(ax5, '통신용 함체',TH_AVG_TEMP, x_sequence, x_arange_top, x_ticks_top, -20, 55)
+    set_subplot(ax1, '변압기 본체', df_3t['BB_AVG_TEMP'], x_sequence, x_arange, x_ticks_no, -20, 55)
+    set_subplot(ax2, '부하 개폐기', df_3t['BG_AVG_TEMP'], x_sequence, x_arange, x_ticks_no, -20, 55)
+    set_subplot(ax3, '완금', df_3t['WG_AVG_TEMP'], x_sequence, x_arange, x_ticks_no, -20, 55)
+    set_subplot(ax4, '전주', df_3t['JJ_AVG_TEMP'], x_sequence, x_arange, x_ticks_no, -20, 55)
+    set_subplot(ax5, '통신용 함체', df_3t['TH_AVG_TEMP'], x_sequence, x_arange, x_ticks, -20, 55)
 
-    print(BG_AVG_TEMP)
+    ax6.plot(x_sequence, df_3t['BB_AVG_TEMP'], label='변압기 본체')
+    ax6.plot(x_sequence, df_3t['JJ_AVG_TEMP'], label='전주')
+    ax6.plot(x_sequence, df_diff, label='차이')
+    ax6.set_xticks(x_arange)
+    ax6.set_xticklabels(x_ticks)
 
-    x_arange_bottom = make_x_arange(x_sequence, 60)
-    x_ticks_bottom = make_x_tick(COLUMN_MINUTE, x_arange_bottom)
-    #ax6.plot(x_sequence, BB_AVG_TEMP, label='변압기 본체')
-    # ax6.plot(x_time, BG_AVG_TEMP, label='부하 개폐기')
-    # ax6.plot(x_time, WG_AVG_TEMP, label='완금')
-    ax6.plot(x_sequence, JJ_AVG_TEMP, label='전주')
-    # ax6.plot(x_time, TH_AVG_TEMP, label='통신용 함체')
-    ax6.set_xticks(x_arange_bottom)
-    ax6.set_xticklabels(x_ticks_bottom, rotation='vertical')
-
-    print(JJ_AVG_TEMP)
-    for x in range(len(JJ_AVG_TEMP)):
-        print(JJ_AVG_TEMP[x])
     print('past time:', time.time() - start)
     plt.legend()
     plt.show()
