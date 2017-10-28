@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     df_query = select(table, cur, pole_id, time_start, time_end)
     df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']] = df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].astype('float64')
-    df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']] = df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].interpolate()
+    df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].interpolate()
 
     df_3t = df_query.resample('3T').max()
     df_diff = df_3t['BB_AVG_TEMP'] - df_3t['JJ_AVG_TEMP']
