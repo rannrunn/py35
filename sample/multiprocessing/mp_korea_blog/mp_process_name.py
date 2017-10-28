@@ -1,20 +1,28 @@
 import os
-from multiprocessing import Process
+
+from multiprocessing import Process, current_process
+
 
 def doubler(number):
+
     result = number * 2
-    proc = os.getpid()
-    print('{0} doubled to {1} by process id: {2}'.format( number, result, proc))
+    proc_name = current_process().name
+    print('{0} doubled to {1} by: {2}'.format( number, result, proc_name))
+
 
 if __name__ == '__main__':
     numbers = [5, 10, 15, 20, 25]
     procs = []
+    proc = Process(target=doubler, args=(5, ))
 
-    # 프로세스 중 하나에 에러가 생길 경우 그 프로세스만 중단된다. (에러처리하지 않을 경우)
     for index, number in enumerate(numbers):
         proc = Process(target=doubler, args=(number,))
         procs.append(proc)
         proc.start()
+
+    proc = Process(target=doubler, name='Test', args=(2,))
+    proc.start()
+    procs.append(proc)
 
     for proc in procs:
         proc.join()
