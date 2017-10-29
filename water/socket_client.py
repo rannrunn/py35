@@ -9,7 +9,7 @@ def main():
 
     data = {}
     # abnormal_judgment , learning_start, learning_add, predict_discharge
-    data['command'] = 'learning_start'
+    data['command'] = 'learning_start[]'
 
     json_data = json.dumps(data)
 

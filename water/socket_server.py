@@ -2,7 +2,7 @@
 
 from _thread import *
 import socket
-import water_regression as wr
+import regression as wr
 import json
 import traceback
 
@@ -18,7 +18,7 @@ def on_new_client(conn):
 
         cmd = dict_data['command']
 
-        if cmd == 'learning_start':
+        if cmd == 'learning_start[]':
             #result = so.test(dec_data, conn)
             wr.main(conn)
             print('server : ', cmd)
