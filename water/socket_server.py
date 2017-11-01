@@ -3,8 +3,15 @@
 from _thread import *
 import socket
 import regression as wr
+
 import json
 import traceback
+import callmain as cm
+import statistics_gugan as sg
+import abnormal_point as ap
+
+def getDictValue(dict, key):
+    return dict[key] if key in dict else ''
 
 def on_new_client(conn):
     try:
@@ -16,18 +23,25 @@ def on_new_client(conn):
         dec_data = data.decode()
         dict_data = json.loads(dec_data)
 
-        cmd = dict_data['command']
+        command = getDictValue(dict_data, 'command')
+        command_detail = getDictValue(dict_data, 'command_detail')
 
-        if cmd == 'learning_start[]':
-            #result = so.test(dec_data, conn)
-            wr.main(conn)
-            print('server : ', cmd)
-        elif cmd == 'learning_add':
-            print('server : ', cmd)
-        elif cmd == 'predict':
-            print('server : ', cmd)
-        else:
-            print('server : cmd nothing')
+        if command == 'calculate_statistics_abnormal':
+            sg.main(dict_data)
+        elif command == 'calculate_abnormal':
+            ap.main(dict_data)
+        elif command == 'calculate_statistics':
+            if command_detail == 'average':
+                pass
+            elif command_detail == 'variance':
+                pass
+            elif command_detail == 'standard_deviation':
+                pass
+            elif command_detail == 'correlation':
+                # 벨리데이션 해야 한다. location_one(locaiton, type), location_two(location, type) 가 모두 있는 지 확인해야 한다.
+                pass
+        elif command == 'calculate_regression':
+            pass
 
         conn.send('end'.encode())
     except Exception as ex:

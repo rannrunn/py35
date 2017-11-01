@@ -12,7 +12,7 @@ def main():
     # calculate_abnormal
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_statistics'
+    command = 'calculate_statistics_abnormal'
     # average, variance, standard_deviation,
     command_detail = 'correlation'
 
@@ -21,7 +21,6 @@ def main():
     dict['command_to'] = 'server'
     time_start = '2017-07-01 00:00:00'
     time_end = '2017-08-01 00:00:00'
-
 
     if command == 'calculate_statistics_abnormal':
         dict['section'] = 'one'
@@ -47,6 +46,8 @@ def main():
         dict['location_target'] = 'd.paldang + d.36t'
         dict['time_start'] = time_start
         dict['time_end'] = time_end
+
+    print(dict)
 
     # abnormal_judgment , learning_start, learning_add, predict_discharge
 
