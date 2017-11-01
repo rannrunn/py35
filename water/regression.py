@@ -7,7 +7,7 @@ np.set_printoptions(threshold=np.nan)
 import os
 import time
 import datetime
-from function import correlation
+from function import statistics
 import tensorflow as tf
 import traceback
 
@@ -216,7 +216,7 @@ def main(conn):
                 bool_difference_data = difference_data[:] > difference
                 print(data_time[bool_difference_data])
 
-                print('water regression : 상관관계', correlation.correlation(y_data.tolist(), predict_data.tolist()))
+                print('water regression : 상관관계', statistics.correlation(y_data.tolist(), predict_data.tolist()))
 
                 #print('Difference Data:', difference_data)
                 print('water regression : Max:', np.max(y_data - predict_data))
