@@ -6,9 +6,7 @@ import regression as wr
 
 import json
 import traceback
-import callmain as cm
-import statistics_gugan as sg
-import abnormal_point as ap
+
 
 def getDictValue(dict, key):
     return dict[key] if key in dict else ''
@@ -27,9 +25,11 @@ def on_new_client(conn):
         command_detail = getDictValue(dict_data, 'command_detail')
 
         if command == 'calculate_statistics_abnormal':
-            sg.main(dict_data)
+            #sg.main(dict_data)
+            pass
         elif command == 'calculate_abnormal':
-            ap.main(dict_data)
+            #ap.main(dict_data)
+            pass
         elif command == 'calculate_statistics':
             if command_detail == 'average':
                 pass
@@ -61,7 +61,7 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)         # Create a socket object
     s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
     host = '' # Get local machine name
-    port = 12580                 # Reserve a port for your service.
+    port = 10000                 # Reserve a port for your service.
 
     s.bind((host, port))        # Bind to the port
     s.listen(5)                 # Now wait for client connection.

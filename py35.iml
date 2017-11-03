@@ -5,6 +5,7 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/water" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sld" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pdfminer00" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

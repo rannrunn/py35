@@ -75,6 +75,7 @@ def setY(dict, df):
 def methodOfLeastSquares(A, Y):
     #A = np.array([[1, 1],[2, 1],[3, 1],[4, 1]])
     #Y = np.array([[1],[2],[3],[4]])
+    print(A)
     Apinv = np.dot(np.linalg.inv(np.dot(A.T, A)), A.T)
     x, resid, rank, s = np.linalg.lstsq(A, Y)
     return x
@@ -107,7 +108,7 @@ def main():
     x = methodOfLeastSquares(setA(dict, df), setY(dict, df))
     print(x)
 
-    print(df)
+    print(df.head(10))
 
 
 if __name__ == '__main__':
