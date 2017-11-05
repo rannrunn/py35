@@ -11,7 +11,7 @@ font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get
 rc('font', family=font_name)
 
 # SELECT 하는 방법
-def select(table, cur, pole_id, time_start, time_end):
+def select(cur, pole_id, time_start, time_end):
     query = """SELECT DATE_FORMAT(CONCAT(CONVERT(COLUMN_MINUTE, CHAR(16)), '00'), '%%Y-%%m-%%d %%H:%%i:%%s') AS COLUMN_MINUTE,POLE_ID,BB_AVG_TEMP,BG_AVG_TEMP,WG_AVG_TEMP,JJ_AVG_TEMP,TH_AVG_TEMP 
                 FROM TB_IOT_POLE_MINUTE_AVG_TEMP 
                 WHERE POLE_ID = '%s' AND COLUMN_MINUTE BETWEEN '%s' AND '%s'  
@@ -52,20 +52,13 @@ if __name__ == '__main__':
     cur.execute('SET CHARACTER SET utf8;')
     cur.execute('SET character_set_connection=utf8;')
 
-
-    list_key = ['COLUMN_MINUTE','POLE_ID','BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']
-
-
-    table = 'TB_IOT_POLE_MINUTE_AVG_TEMP'
-
-
     pole_id = '8132W133'
     time_date = '20161112'
     time_start = time_date + '0000'
     time_end = time_date + '2359'
 
 
-    df_query = select(table, cur, pole_id, time_start, time_end)
+    df_query = select(cur, pole_id, time_start, time_end)
     df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']] = df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].astype('float64')
     df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].interpolate()
 
