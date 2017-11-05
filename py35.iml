@@ -6,6 +6,9 @@
       <sourceFolder url="file://$MODULE_DIR$/water" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sld" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/pdfminer00" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/pyqt5-master" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/pyqt5-master/examples/graphicsview/diagramscene" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/pyqt5-master/examples/draganddrop/puzzle" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
