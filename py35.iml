@@ -9,6 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/test/pyqt5-master" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/pyqt5-master/examples/graphicsview/diagramscene" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/pyqt5-master/examples/draganddrop/puzzle" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sample/pyqt5/pyqt5-master/examples/draganddrop/puzzle" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
