@@ -49,6 +49,7 @@ class DBCon():
             results = self.cur.fetchall()
             df_query = pd.DataFrame(list(results))
             df_query = df_query.set_index(pd.to_datetime(df_query['COLUMN_MINUTE']))
+        print('query_end')
         return df_query
 
 class Form(QWidget):
@@ -176,7 +177,6 @@ class Form(QWidget):
             ax3.plot(df_3t['BB_AVG_TEMP'], label='변압기 본체')
             ax3.plot(df_3t['JJ_AVG_TEMP'], label='전주')
             ax3.plot(df_diff, label='차이')
-            print('plot_start3')
             self.canvas.draw()
         print('plot_end')
 
