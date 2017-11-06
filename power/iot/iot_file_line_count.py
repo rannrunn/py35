@@ -1,3 +1,4 @@
+# 2차로 받은 폴 데이터의 파일 별 라인수를 세는 코드
 # coding: utf-8
 import os
 import datetime
