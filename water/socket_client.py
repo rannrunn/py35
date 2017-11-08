@@ -5,14 +5,14 @@ import json
 
 def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('localhost', 12580))
+    client.connect(('localhost', 10000))
 
 
     # calculate_statistics_abnormal
     # calculate_abnormal
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_statistics_abnormal'
+    command = 'calculate_statistics_abnormal,,,,,'
     # average, variance, standard_deviation,
     command_detail = 'correlation'
 
