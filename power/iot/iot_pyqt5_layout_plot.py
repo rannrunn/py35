@@ -196,7 +196,7 @@ class Form(QWidget):
             data = [random.random() for i in range(25)]
             # 랜덤 차트
             ax1 = self.fig.add_subplot(211)
-            # 변압기 본체, 전즈, 변압기 본체 - 전주의 온도를 표시하는 차트
+            # 변압기 본체, 전주, 변압기 본체 - 전주의 온도를 표시하는 차트
             ax3 = self.fig.add_subplot(212)
             ax1.plot(data, 'r-')
             ax1.set_title('PyQt Matplotlib Example')
@@ -263,7 +263,6 @@ class Form(QWidget):
         dict['time_start'] = str
 
     # 실행 버튼 클릭 이벤트
-    @pyqtSlot()
     def button_on_click(self):
         dict['time_start'] = self.le_time_start.text()
         dict['time_end'] = self.le_time_end.text()

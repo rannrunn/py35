@@ -2,7 +2,6 @@
 
 from _thread import *
 import socket
-import regression as wr
 
 import json
 import traceback
@@ -24,25 +23,33 @@ def on_new_client(conn):
         command = getDictValue(dict_data, 'command')
         command_detail = getDictValue(dict_data, 'command_detail')
 
-        if command == 'calculate_statistics_abnormal':
-            #sg.main(dict_data)
-            pass
-        elif command == 'calculate_abnormal':
-            #ap.main(dict_data)
-            pass
-        elif command == 'calculate_statistics':
+        if command == 'calculate_statistics':
             if command_detail == 'average':
+                dict_data['command_to'] = 'client'
+                dict_data['return_value'] = {'average':{'':'', '':'', '':'', '':''}}
                 pass
             elif command_detail == 'variance':
+                dict_data['command_to'] = 'client'
+                dict_data['return_value'] = {'variance':{'':'', '':'', '':'', '':''}}
                 pass
             elif command_detail == 'standard_deviation':
+                dict_data['command_to'] = 'client'
+                dict_data['return_value'] = {'standard_deviation':{'':'', '':'', '':'', '':''}}
                 pass
             elif command_detail == 'correlation':
+                dict_data['command_to'] = 'client'
+                dict_data['return_value'] = {'correlation':{'':'', '':'', '':'', '':''}}
                 # 벨리데이션 해야 한다. location_one(locaiton, type), location_two(location, type) 가 모두 있는 지 확인해야 한다.
                 pass
         elif command == 'calculate_regression':
+            dict_data['command_to'] = 'client'
+            dict_data['return_value'] = {{
+                "weight_1,weight_2,weight_N,bias" : "15000,10000,9500,1200",
+                "multiple_correlation" : "0.88",
+                "r_square" : "0.88"
+            }}
             pass
-
+        conn.send(json.dumps(dict_data).encode())
         conn.send('end'.encode())
     except Exception as ex:
         conn.send('error'.encode())
