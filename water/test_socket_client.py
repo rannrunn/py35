@@ -1,12 +1,12 @@
 # coding: utf-8
+
 import socket
 import time
 import json
 
 def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('localhost', 10000))
-
+    client.connect(('localhost', 12580))
 
     # calculate_statistics_abnormal
     # calculate_abnormal
@@ -41,39 +41,28 @@ def main():
         dict['time_start'] = time_start
         dict['time_end'] = time_end
 
-    print(dict)
-
     # abnormal_judgment , learning_start, learning_add, predict_discharge
 
     json_data = json.dumps(dict)
 
-    print('client : JSON_print: ', json_data)
+    print('request_data : ', json_data)
 
     client.send(json_data.encode())
 
-    while True:
-        print('client : start')
-        try:
-            response = client.recv(4096)
-            print ('client : response :', response.decode())
-            dec_data = response.decode()
-            if dec_data == 'end':
-                print('client : dec_data : end')
-                break
-            elif dec_data == 'error':
-                print('client : dec_data : error')
-                break
-            else:
-                print('clien : dict_data :', dec_data)
-            print('client : while continue')
-        except Exception as ex:
-            # print('Exception:')
-            print('client : Exception')
-            pass
-
-    print('client : .........')
+    try:
+        response = client.recv(4096)
+        dec_data = response.decode()
+        if dec_data == 'end':
+            print('dec_data : end')
+        elif dec_data == 'error':
+            print('dec_data : error')
+        else:
+            print('response_data :', dec_data)
+    except Exception as ex:
+        # print('Exception:')
+        print('Exception')
 
 if __name__ == '__main__':
     start = time.time()
     main()
-    print('client : communication time: %f' % (time.time() - start))
+    print('communication time: %f' % (time.time() - start))
