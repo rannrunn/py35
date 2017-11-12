@@ -5,7 +5,7 @@ import numpy as np
 # 시드 설정하기
 # seed : pseudo random 상태 설정
 np.random.seed(0)
-# seed에 따라 0과 1사의 난수를 생성
+# seed에 따라 0과 1사이의 난수를 생성
 print(np.random.rand(5))
 
 
