@@ -1,3 +1,4 @@
+# 모니터링 화면에 사용하는 소스
 import MySQLdb
 import dbconnection as conn
 import common as comm
