@@ -1,118 +1,97 @@
+# 회귀 분석을 하는 소스
+
 import MySQLdb
 import numpy as np
 import pandas as pd
-from numpy import*
 
 import common as comm
 import dbconnection as conn
+import traceback
 
-
-# {'location_target': 'd.paldang + d.36t', 'time_start': '2017-07-01 00:00:00', 'command_to': 'server', 'location_source': '[d.yangje - d.gwangam][d.yangje - d.gimpo]', 'command': 'calculate_regression', 'time_end': '2017-08-01 00:00:00'}
-
-def getColumnsSource(source):
-    result = ''
-    list = source.split('[')[1:]
-    list = [str.replace(']','') for str in list]
-    cnt = 0
-    for elt in list:
-        cnt = cnt + 1;
-        result = result + ', ' + elt + ' AS C' + str(cnt)
-    return result
-
-def getColumnsTarget(target):
-    print(target)
-    result = ''
-    result = result + ', ' + target + ' AS T'
-    return result
-
-def setWhere(dict):
-    result = ''
-    return result
-
-
-def getData(cur, dict):
-    source = dict['location_source']
-    target = dict['location_target']
-
-    columns_source = getColumnsSource(source)
-    columns_target = getColumnsTarget(target)
-
-    print(columns_source)
-    print(columns_target)
-    print('source:', source)
-
-    query = "\n SELECT D.TIMESTAMP %s" % (columns_source) \
-            + "\n  %s" % (columns_target) \
-            + "\n  FROM TB_WATER_DISCHARGE D, TB_WATER_PRESSURE P" \
-            + "\n  WHERE 1 = 1 " \
-            + "\n  AND D.TIMESTAMP = P.TIMESTAMP " \
-            + "\n  AND D.TIMESTAMP BETWEEN '%s' AND '%s'" % (comm.getDictValue(dict, 'time_start'), comm.getDictValue(dict, 'time_end')) \
-            + comm.getWhereTwoTable('COMMON') \
-            + comm.getWhereTwoTable('HONGTONG') \
-            + comm.getWhereTwoTable('SEONGSAN_GIMPO')
-
-    print(query)
-    cur.execute(query)
-    tuple = cur.fetchall()
-    df = pd.DataFrame(list(tuple))
-
-    return df
-
-def setA(dict, df):
-    source = dict['location_source']
-    list = []
-    for i in range(len(source.split('[')[1:])):
-        list.append('C' + str(i + 1))
-    result_df = df.reindex(columns=list)
+# 회귀 분석을 할 A 값 들의 리스트
+def setA(df):
+    result_df = df.reindex(columns=list(df.columns[0:-1]))
     result_df['b'] = 1
     return result_df.values
 
-def setY(dict, df):
-    source = dict['location_source']
-    result_df = df.reindex(columns=['T'])
+# 회귀 분석을 할 Y 값의 리스트
+def setY(df):
+    result_df = df.reindex(columns=list(df.columns[-1:]))
     return result_df.values
 
+# pseudo inverse를 이용해 회귀분석
 def methodOfLeastSquares(A, Y):
     #A = np.array([[1, 1],[2, 1],[3, 1],[4, 1]])
     #Y = np.array([[1],[2],[3],[4]])
-    print(A)
     Apinv = np.dot(np.linalg.inv(np.dot(A.T, A)), A.T)
     x, resid, rank, s = np.linalg.lstsq(A, Y)
     return x
 
 
-def main():
+# 회귀분석에 대한 계산을 한다.
+def calculate(dict):
 
-    con = conn.getConnection()
-    cur = con.cursor(MySQLdb.cursors.DictCursor)
+    try:
 
-    command = 'calculate_regression'
-    command_detail = ''
+        # DB 커넥션 을 생성한다.
+        con = conn.getConnection()
+        con.set_character_set('utf8')
+        cur = con.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute('SET NAMES utf8;')
+        cur.execute('SET CHARACTER SET utf8;')
+        cur.execute('SET character_set_connection=utf8;')
 
-    #['Timestamp','f_hongtong','f_lotte_in','p_oryun_1','p_songpa_1','p_oryun_2','p_songpa_2']
+        command_detail = comm.getDictValue(dict, 'command_detail')
 
-    dict = {}
-    dict['command'] = command
-    dict['command_to'] = 'server'
-    time_start = '2017-07-01 00:00:00'
-    time_end = '2017-08-01 00:00:00'
-    dict['location_source'] = '[d.P_ORYUN_1 - d.P_SONGPA_1][d.P_ORYUN_2 - d.P_SONGPA_2]'
-    dict['location_target'] = 'd.D_HONGTONG + d.D_LOTTE_IN'
-    dict['time_start'] = time_start
-    dict['time_end'] = time_end
+        dict['command_to'] = 'client'
 
-    df = getData(cur, dict)
+        # 지점 리스트를 불러온다.
+        list_sector = comm.getSector(cur, dict)
+        # 데이터를 불러온다.
+        df = comm.getDataFrame(cur, dict, list_sector)
 
-    print(dict)
+        # 회귀 분석에 대한 결과를 가져온다.
+        result_regression = methodOfLeastSquares(setA(df), setY(df))
+        #print('result_regression', result_regression)
 
-    x = methodOfLeastSquares(setA(dict, df), setY(dict, df))
-    print(x)
+        # 다중 상관계수 계산
+        result_multiple_correlation = 0
+        #print('result_multiple_correlation', result_multiple_correlation)
 
-    print(df.head(10))
+        # 결정 계수 계산 : 결정계수는 다중상관계수의 제곱이다.
+        result_r_square = 0
+        #print('result_r_square', result_r_square)
 
+        print(result_regression)
+        # JSON 생성
+        return_key_result_regression = ''
+        return_value_result_regression = ''
+        for idx in range(len(df.columns) - 1):
+            return_key_result_regression += 'weight_' + str(idx + 1) + ','
+        return_key_result_regression += 'bias'
+        for idx in range(len(result_regression)):
+            return_value_result_regression += str(result_regression[idx][0]) + ','
+        return_value_result_regression = return_value_result_regression[:-1]
+
+        dict['return_value'] = {return_key_result_regression:return_value_result_regression}
+
+        print(dict)
+
+        return dict
+
+    except Exception as e:
+        traceback.print_exc()
 
 if __name__ == '__main__':
-    main()
+    dict = {}
+    dict['command'] = 'calculate_regression'
+    dict['command_to'] = 'server'
+    dict['sector'] = '1'
+    dict['table'] = 'RDR01MI_TB'
+    dict['time_start'] = '2017-06-01 11:22:00'
+    dict['time_end'] = '2017-08-27 13:22:00'
+
+    calculate(dict)
 
 
 

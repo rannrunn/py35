@@ -6,6 +6,9 @@ import socket
 import json
 import datetime
 
+import calculate_statistics
+import calculate_regression
+
 def getDictValue(dict, key):
     return dict[key] if key in dict else ''
 
@@ -25,20 +28,16 @@ def on_new_client(conn, client, port):
 
         if command == 'calculate_statistics':
             if command_detail == 'average':
-                dict_data['return_value'] = {'average':{'':'', '':'', '':'', '':''}}
+                dict_data = calculate_statistics.calculate(dict_data)
             elif command_detail == 'variance':
-                dict_data['return_value'] = {'variance':{'':'', '':'', '':'', '':''}}
+                dict_data = calculate_statistics.calculate(dict_data)
             elif command_detail == 'standard_deviation':
-                dict_data['return_value'] = {'standard_deviation':{'':'', '':'', '':'', '':''}}
+                dict_data = calculate_statistics.calculate(dict_data)
             elif command_detail == 'correlation':
-                dict_data['return_value'] = {'correlation':{'':'', '':'', '':'', '':''}}
+                dict_data = calculate_statistics.calculate(dict_data)
                 # 벨리데이션 해야 한다. location_one(locaiton, type), location_two(location, type) 가 모두 있는 지 확인해야 한다.
         elif command == 'calculate_regression':
-            dict_data['return_value'] = {{
-                "weight_1,weight_2,weight_3,bias" : "15000,10000,9500,1200",
-                "multiple_correlation" : "0.88",
-                "r_square" : "0.50"
-            }}
+            dict_data = calculate_regression.calculate(dict_data)
 
         response_data = json.dumps(dict_data)
         conn.send(response_data.encode())

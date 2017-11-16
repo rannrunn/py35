@@ -12,7 +12,7 @@ def main():
     # calculate_abnormal
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_statistics'
+    command = 'calculate_regression'
     # average, variance, standard_deviation,
     command_detail = 'correlation'
 
@@ -20,23 +20,23 @@ def main():
     dict['command'] = command
     dict['command_to'] = 'server'
     time_start = '2017-07-01 00:00:00'
-    time_end = '2017-08-01 00:00:00'
+    time_end = '2017-07-21 00:00:00'
 
     if command == 'calculate_statistics':
         if command_detail == 'correlation':
             dict['command_detail'] = command_detail
-            dict['sector'] = ''
+            dict['sector'] = '1'
             dict['table'] = 'RDR01MI_TB'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
         else:
             dict['command_detail'] = command_detail
-            dict['sector'] = ''
+            dict['sector'] = '1'
             dict['table'] = 'RDR01MI_TB'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
     elif command == 'calculate_regression':
-        dict['sector'] = ''
+        dict['sector'] = '1'
         dict['table'] = 'RDR01MI_TB'
         dict['time_start'] = time_start
         dict['time_end'] = time_end

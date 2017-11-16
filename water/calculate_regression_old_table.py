@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from numpy import*
 
-import common as comm
+import common_old as comm
 import dbconnection as conn
 
 
@@ -61,6 +61,7 @@ def getData(cur, dict):
 def setA(dict, df):
     source = dict['location_source']
     list = []
+    print(source.split('[')[1:])
     for i in range(len(source.split('[')[1:])):
         list.append('C' + str(i + 1))
     result_df = df.reindex(columns=list)
@@ -95,8 +96,8 @@ def main():
     dict['command'] = command
     dict['command_to'] = 'server'
     time_start = '2017-07-01 00:00:00'
-    time_end = '2017-08-01 00:00:00'
-    dict['location_source'] = '[d.P_ORYUN_1 - d.P_SONGPA_1][d.P_ORYUN_2 - d.P_SONGPA_2]'
+    time_end = '2017-07-15 00:00:00'
+    dict['location_source'] = '[d.P_ORYUN_1 - d.P_SONGPA_1]'
     dict['location_target'] = 'd.D_HONGTONG + d.D_LOTTE_IN'
     dict['time_start'] = time_start
     dict['time_end'] = time_end
