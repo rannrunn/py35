@@ -26,7 +26,7 @@ def select(cur, pole_id, time_start, time_end):
 
 # 차트의 x축 생성
 def make_x_arange(x_src, interval):
-    return np.arange(min(x_src), max(x_src)+1, interval)
+    return np.arange(min(x_src), max(x_src), interval)
 
 # 차트의 y축 생성
 def make_x_tick(list_data, list_cnt):
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     # 중간값 채우기
     df_query[['BB_AVG_TEMP','BG_AVG_TEMP','WG_AVG_TEMP','JJ_AVG_TEMP','TH_AVG_TEMP']].interpolate()
     # 데이터를 3분씩 묶음
-    df_3t = df_query.resample('3T').max()
+    df_3t = df_query.resample('3T').min()
     # 변압기 본체와 전주의 차이를 구함
     df_diff = df_3t['BB_AVG_TEMP'] - df_3t['JJ_AVG_TEMP']
 
@@ -75,9 +75,11 @@ if __name__ == '__main__':
     x_sequence = [i for i in range(len(df_3t['COLUMN_MINUTE']))]
 
 
-    x_arange = make_x_arange(x_sequence, 180)
+    x_arange = make_x_arange(x_sequence, 20)
     x_ticks_no = ['' for i in range(len(x_arange))]
     x_ticks = make_x_tick(df_3t['COLUMN_MINUTE'], x_arange)
+
+    x_ticks = [item[11:16] for item in x_ticks]
 
     # 사이즈 15, 10의 figure 생성
     fig = plt.figure(figsize=(15, 10))
