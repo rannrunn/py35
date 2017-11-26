@@ -27,6 +27,24 @@ def methodOfLeastSquares(A, Y):
     x, resid, rank, s = np.linalg.lstsq(A, Y)
     return x
 
+# 다중상관계수 계산
+def getMultipleCorrelation(df, result_regression):
+    # 회귀계산의 독립변수로 사용된 데이터 추출
+    df_one = df.reindex(columns=list(df.columns[0:-1]))
+    df_one['b'] = 1
+    # 회귀계산의 종속변수로 사용된 데이터 추출
+    df_two = df.reindex(columns=list(df.columns[-1:]))
+    # 추출된 값과 회귀계수를 행렬연산하여 데이터 프레임에 추가
+    df_two['RESULT_CAL'] = np.dot(df_one.values, result_regression)
+    A = df_two.iloc[:,0]
+    B = df_two.iloc[:,1]
+    # 다중상관계수를 계산하여 리턴
+    return A.corr(B)
+
+# 결정계수 계산
+def getRSquare(result_multiple_correlation):
+    return result_multiple_correlation ** 2
+
 
 # 회귀분석에 대한 계산을 한다.
 def calculate(dict):
@@ -55,25 +73,27 @@ def calculate(dict):
         #print('result_regression', result_regression)
 
         # 다중 상관계수 계산
-        result_multiple_correlation = 0
-        #print('result_multiple_correlation', result_multiple_correlation)
+        result_multiple_correlation = getMultipleCorrelation(df, result_regression)
+        print('result_multiple_correlation', result_multiple_correlation)
 
         # 결정 계수 계산 : 결정계수는 다중상관계수의 제곱이다.
-        result_r_square = 0
-        #print('result_r_square', result_r_square)
-
+        result_r_square = getRSquare(result_multiple_correlation)
+        print('result_r_square', result_r_square)
+        print(df.columns)
         print(result_regression)
         # JSON 생성
         return_key_result_regression = ''
         return_value_result_regression = ''
+        # weight 와 bias
         for idx in range(len(df.columns) - 1):
             return_key_result_regression += 'weight_' + str(idx + 1) + ','
         return_key_result_regression += 'bias'
+        # 회귀계수
         for idx in range(len(result_regression)):
             return_value_result_regression += str(result_regression[idx][0]) + ','
         return_value_result_regression = return_value_result_regression[:-1]
 
-        dict['return_value'] = {return_key_result_regression:return_value_result_regression}
+        dict['return_value'] = {return_key_result_regression:return_value_result_regression,'multiple_correlation':result_multiple_correlation,'r_square':result_r_square}
 
         print(dict)
 
