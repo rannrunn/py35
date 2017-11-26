@@ -1,12 +1,12 @@
 # 통계 계산을 하는 소스
 # 확인 요망을 주석으로 단 부분은 서비스 전에 확인해야 한다.
 
+import traceback
+
 import MySQLdb
-import pandas as pd
 
 import common as comm
 import dbconnection as conn
-import traceback
 
 
 # 상관계수 : 지점 간의 상관계수를 모두 구해야 한다.
