@@ -1,23 +1,32 @@
 # coding: utf-8
 
-from _thread import *
-import socket
-
-import json
 import datetime
+import json
+import socket
+import traceback
+from _thread import *
 
-import calculate_statistics
 import calculate_regression
+import calculate_statistics
+import validation as valid
 
+# 딕셔너리에서 벨류를 가져오는 함수
 def getDictValue(dict, key):
     return dict[key] if key in dict else ''
 
+# 새로운 소켓 링크 생성
 def on_new_client(conn, client, port):
-    response_data = ''
+
     try:
         data = conn.recv(1024)
         dec_data = data.decode()
         dict_data = json.loads(dec_data)
+
+        # dictionary 데이터를 벨리데이션 하여 오류가 있을 경우 리턴
+        dict_data = valid.validate_json(dict_data)
+        if dict_data['error'] != '':
+            conn.send(json.dumps(dict_data).encode())
+            raise Exception
 
         print ('[*] ' + client + ':' + port + ' : Request JSON Data : ', dict_data)
 
@@ -39,16 +48,18 @@ def on_new_client(conn, client, port):
         elif command == 'calculate_regression':
             dict_data = calculate_regression.calculate(dict_data)
 
+    except Exception as ex:
+        #traceback.print_exc()
+        if dict_data['error'] == '':
+            dict_data['error'] = 'socket server error'
+    finally:
         response_data = json.dumps(dict_data)
         conn.send(response_data.encode())
-    except Exception as ex:
-        response_data = 'Exception'
-        conn.send(response_data.encode())
+        conn.close()
 
     print ('[*] ' + client + ':' + port + ' : Response JSON Data : ', response_data)
     print ('[*] ' + client + ':' + port + ' : Connection End ')
 
-    conn.close()
 
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)         # Create a socket object

@@ -1,3 +1,5 @@
+# 텐서플로우를 이용한 회귀 분석 소스
+# 실제 운영서버에서는 사용되지 않지만 남겨놓습니다.
 # coding: utf-8
 import sys
 sys.version

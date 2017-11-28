@@ -8,13 +8,11 @@ def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(('localhost', 12580))
 
-    # calculate_statistics_abnormal
-    # calculate_abnormal
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_regression'
-    # average, variance, standard_deviation,
-    command_detail = 'correlation'
+    command = 'calculate_statistics'
+    # average, variance, standard_deviation, correlation
+    command_detail = 'average'
 
     dict = {}
     dict['command'] = command
@@ -25,19 +23,25 @@ def main():
     if command == 'calculate_statistics':
         if command_detail == 'correlation':
             dict['command_detail'] = command_detail
-            dict['sector'] = '1'
+            dict['sector'] = '001'
             dict['table'] = 'RDR01MI_TB'
+            dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
+            dict['output'] = 'D_PALDANG'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
         else:
             dict['command_detail'] = command_detail
-            dict['sector'] = '1'
+            dict['sector'] = '001'
             dict['table'] = 'RDR01MI_TB'
+            dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
+            dict['output'] = 'D_PALDANG'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
     elif command == 'calculate_regression':
-        dict['sector'] = '1'
+        dict['sector'] = '001'
         dict['table'] = 'RDR01MI_TB'
+        dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
+        dict['output'] = 'D_PALDANG'
         dict['time_start'] = time_start
         dict['time_end'] = time_end
 
@@ -52,12 +56,7 @@ def main():
     try:
         response = client.recv(4096)
         dec_data = response.decode()
-        if dec_data == 'end':
-            print('dec_data : end')
-        elif dec_data == 'error':
-            print('dec_data : error')
-        else:
-            print('response_data :', dec_data)
+        print('response_data :', dec_data)
     except Exception as ex:
         # print('Exception:')
         print('Exception')

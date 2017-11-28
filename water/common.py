@@ -5,24 +5,13 @@ import datetime
 def getDictValue(dict, key):
     return dict[key] if key in dict else ''
 
-# 확인요망
 # DB 에서 구간에 속한 지점을 가져온다.
-def getSector(cur, dict):
-    list_col = ['STEP_IN_1', 'STEP_IN_2', 'STEP_IN_3', 'STEP_IN_4', 'STEP_IN_5', 'STEP_OUT_1']
-    list_return = []
-    query = """
-                SELECT STEP_IN_1, STEP_IN_2, STEP_IN_3, STEP_IN_4, STEP_IN_5, STEP_OUT_1  
-                FROM SEC_TB
-                WHERE 1 = 1
-                AND PIPE_BLK = '%s'
-            """ % (getDictValue(dict, 'sector'))
-    cur.execute(query)
-    tuple = cur.fetchall()
-    if cur.rowcount == 1:
-        for item in list_col:
-            if tuple[0][item] != '' and tuple[0][item] is not None:
-                list_return.append(tuple[0][item])
-    return list_return
+def getSector(dict):
+    # 입력변수를 가져온다.
+    x = [item.replace(' ', '') for item in dict['input'].split(',')]
+    # 출력변수를 가져온다.
+    y = [item.replace(' ', '') for item in dict['output'].split(',')]
+    return x + y
 
 # DB에서 지점의 데이터를 가져온다.
 def getLocationData(cur, dict, tag_name):
@@ -46,7 +35,7 @@ def getTimeDifference(dict):
     return int(time_diff.total_seconds() / 60) + 1
 
 
-def getDataFrame(cur, dict, list_sector):
+def getDataFrame(cur, dict):
     # 시작시간과 종료시간이 몇 분 차이나는 지 구한다.
     diff = getTimeDifference(dict)
     # 인덱스를 생성한다.
@@ -54,12 +43,14 @@ def getDataFrame(cur, dict, list_sector):
     # 인덱스를 가지고 데이터 프레임을 생성한다.
     df = pd.DataFrame(index=index_minutes)
     # 지점 리스트를 불러온다.
-    list_sector = getSector(cur, dict)
+    list_sector = getSector(dict)
     # 지점 데이터를 데이터 프레임에 추가한다.
     for item in list_sector:
-        df_sector = pd.DataFrame()
         # 지점의 데이터를 가져온다.
         df_sector = getLocationData(cur, dict, item)
+        # 데이터가 없을 경우 continue
+        if len(df_sector) == 0:
+            dict['error'] = item + ' does not have data'
         # 인덱스를 LOG_TIME으로 설정한다.
         df_sector.set_index('LOG_TIME', inplace=True)
         # 컬럼명을 바꾼다.

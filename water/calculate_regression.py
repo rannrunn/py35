@@ -1,12 +1,13 @@
 # 회귀 분석을 하는 소스
 
+import traceback
+
 import MySQLdb
 import numpy as np
-import pandas as pd
 
 import common as comm
 import dbconnection as conn
-import traceback
+
 
 # 회귀 분석을 할 A 값 들의 리스트
 def setA(df):
@@ -35,7 +36,7 @@ def getMultipleCorrelation(df, result_regression):
     # 회귀계산의 종속변수로 사용된 데이터 추출
     df_two = df.reindex(columns=list(df.columns[-1:]))
     # 추출된 값과 회귀계수를 행렬연산하여 데이터 프레임에 추가
-    df_two['RESULT_CAL'] = np.dot(df_one.values, result_regression)
+    df_two['PREDICTION_DATA'] = np.dot(df_one.values, result_regression)
     A = df_two.iloc[:,0]
     B = df_two.iloc[:,1]
     # 다중상관계수를 계산하여 리턴
@@ -63,10 +64,8 @@ def calculate(dict):
 
         dict['command_to'] = 'client'
 
-        # 지점 리스트를 불러온다.
-        list_sector = comm.getSector(cur, dict)
         # 데이터를 불러온다.
-        df = comm.getDataFrame(cur, dict, list_sector)
+        df = comm.getDataFrame(cur, dict)
 
         # 회귀 분석에 대한 결과를 가져온다.
         result_regression = methodOfLeastSquares(setA(df), setY(df))
@@ -74,13 +73,12 @@ def calculate(dict):
 
         # 다중 상관계수 계산
         result_multiple_correlation = getMultipleCorrelation(df, result_regression)
-        print('result_multiple_correlation', result_multiple_correlation)
+        #print('result_multiple_correlation', result_multiple_correlation)
 
         # 결정 계수 계산 : 결정계수는 다중상관계수의 제곱이다.
         result_r_square = getRSquare(result_multiple_correlation)
-        print('result_r_square', result_r_square)
-        print(df.columns)
-        print(result_regression)
+        #print('result_r_square', result_r_square)
+
         # JSON 생성
         return_key_result_regression = ''
         return_value_result_regression = ''
@@ -95,12 +93,11 @@ def calculate(dict):
 
         dict['return_value'] = {return_key_result_regression:return_value_result_regression,'multiple_correlation':result_multiple_correlation,'r_square':result_r_square}
 
-        print(dict)
-
-        return dict
-
     except Exception as e:
-        traceback.print_exc()
+        #traceback.print_exc()
+        dict['error'] = 'calculate regression error'
+    finally:
+        return dict
 
 if __name__ == '__main__':
     dict = {}
@@ -108,13 +105,11 @@ if __name__ == '__main__':
     dict['command_to'] = 'server'
     dict['sector'] = '1'
     dict['table'] = 'RDR01MI_TB'
+    dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
+    dict['output'] = 'D_PALDANG'
     dict['time_start'] = '2017-06-01 11:22:00'
     dict['time_end'] = '2017-08-27 13:22:00'
 
     calculate(dict)
-
-
-
-
 
 
