@@ -1,5 +1,4 @@
 ﻿# 통계 계산을 하는 소스
-# coding: utf-8
 
 import traceback
 
@@ -39,7 +38,7 @@ def calculate(dict):
         # 데이터를 불러온다.
         df = comm.getDataFrame(cur, dict)
 
-        if dict['error'] != '':
+        if 'error' in dict and dict['error'] != '':
             raise Exception
 
         # 평균

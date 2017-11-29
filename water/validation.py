@@ -1,6 +1,3 @@
-# validation 관련 소스
-# coding: utf-8
-
 def validate_json(dict):
 
     result = ''

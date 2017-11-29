@@ -1,5 +1,4 @@
-# 소켓 서버를 구동하는 소스
-# coding: utf-8
+﻿# coding: utf-8
 
 import datetime
 import json
@@ -25,7 +24,7 @@ def on_new_client(conn, client, port):
 
         # dictionary 데이터를 벨리데이션 하여 오류가 있을 경우 리턴
         dict_data = valid.validate_json(dict_data)
-        if dict_data['error'] != '':
+        if 'error' in dict_data and dict_data['error'] != '':
             raise Exception
 
         print ('[*] ' + client + ':' + port + ' : Request JSON Data : ', dict_data)
@@ -44,7 +43,6 @@ def on_new_client(conn, client, port):
                 dict_data = calculate_statistics.calculate(dict_data)
             elif command_detail == 'correlation':
                 dict_data = calculate_statistics.calculate(dict_data)
-                # 벨리데이션 해야 한다. location_one(locaiton, type), location_two(location, type) 가 모두 있는 지 확인해야 한다.
         elif command == 'calculate_regression':
             dict_data = calculate_regression.calculate(dict_data)
 

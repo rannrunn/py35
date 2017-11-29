@@ -1,5 +1,4 @@
-﻿# 소켓 서버 테스트에 사용하는 소스
-# coding: utf-8
+﻿# coding: utf-8
 
 from _thread import *
 import socket

@@ -1,4 +1,3 @@
-# 소켓 클라이언트를 구동하는 소스
 # coding: utf-8
 
 import socket
@@ -11,7 +10,7 @@ def main():
 
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_regression'
+    command = 'calculate_statistics'
     # average, variance, standard_deviation, correlation
     command_detail = 'correlation'
 

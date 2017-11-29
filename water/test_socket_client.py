@@ -1,4 +1,3 @@
-# 소켓 클라이언트 테스트에 사용하는 소스
 # coding: utf-8
 
 import socket

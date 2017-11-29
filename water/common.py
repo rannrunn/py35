@@ -1,7 +1,4 @@
-# 공통 사항과 관련된 소스
-# coding: utf-8
-
-import pandas as pd
+﻿import pandas as pd
 import datetime
 
 # value 를 가져온다.
@@ -19,7 +16,7 @@ def getSector(dict):
 # DB에서 지점의 데이터를 가져온다.
 def getLocationData(cur, dict, tag_name):
     query = """
-                SELECT LOG_TIME, TAG_VAL  
+                SELECT DATE_FORMAT(CONCAT(LOG_TIME, '00'), '%%Y-%%m-%%d %%H:%%i:%%s') AS LOG_TIME, TAG_VAL  
                 FROM %s
                 WHERE 1 = 1
                 AND TAG_NAME = '%s'
