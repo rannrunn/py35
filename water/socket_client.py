@@ -1,3 +1,4 @@
+# 소켓 클라이언트를 구동하는 소스
 # coding: utf-8
 
 import socket
@@ -10,38 +11,34 @@ def main():
 
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_statistics'
+    command = 'calculate_regression'
     # average, variance, standard_deviation, correlation
-    command_detail = 'average'
+    command_detail = 'correlation'
 
     dict = {}
     dict['command'] = command
     dict['command_to'] = 'server'
     time_start = '2017-07-01 00:00:00'
-    time_end = '2017-07-21 00:00:00'
+    time_end = '2017-11-21 00:00:00'
+    dict['input'] = 'PDILCGS.PDI_FI_TOTAL.F_CV'
+    dict['output'] = 'PDILCGS.PDI_PT601C.F_CV'
 
     if command == 'calculate_statistics':
         if command_detail == 'correlation':
             dict['command_detail'] = command_detail
             dict['sector'] = '001'
             dict['table'] = 'RDR01MI_TB'
-            dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
-            dict['output'] = 'D_PALDANG'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
         else:
             dict['command_detail'] = command_detail
             dict['sector'] = '001'
             dict['table'] = 'RDR01MI_TB'
-            dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
-            dict['output'] = 'D_PALDANG'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
     elif command == 'calculate_regression':
         dict['sector'] = '001'
         dict['table'] = 'RDR01MI_TB'
-        dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
-        dict['output'] = 'D_PALDANG'
         dict['time_start'] = time_start
         dict['time_end'] = time_end
 

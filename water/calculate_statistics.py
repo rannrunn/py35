@@ -1,4 +1,5 @@
-# 통계 계산을 하는 소스
+﻿# 통계 계산을 하는 소스
+# coding: utf-8
 
 import traceback
 
@@ -38,6 +39,9 @@ def calculate(dict):
         # 데이터를 불러온다.
         df = comm.getDataFrame(cur, dict)
 
+        if dict['error'] != '':
+            raise Exception
+
         # 평균
         if command_detail == 'average':
             list_sector = comm.getSector(dict)
@@ -67,8 +71,9 @@ def calculate(dict):
             dict = getCorrelation(cur, dict, df)
 
     except Exception as e:
-        #traceback.print_exc()
-        dict['error'] = 'calculate statistics error'
+        traceback.print_exc()
+        if dict['error'] == '':
+            dict['error'] = 'calculate statistics error'
     finally:
         return dict
 

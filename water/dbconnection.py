@@ -1,3 +1,6 @@
+# DB 커넥션 관련 소스입니다.
+# coding: utf-8
+
 import MySQLdb
 
 

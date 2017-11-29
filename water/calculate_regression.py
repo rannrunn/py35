@@ -1,4 +1,5 @@
-# 회귀 분석을 하는 소스
+﻿# 회귀 분석을 하는 소스
+# coding: utf-8
 
 import traceback
 
@@ -67,6 +68,9 @@ def calculate(dict):
         # 데이터를 불러온다.
         df = comm.getDataFrame(cur, dict)
 
+        if dict['error'] != '':
+            raise Exception
+
         # 회귀 분석에 대한 결과를 가져온다.
         result_regression = methodOfLeastSquares(setA(df), setY(df))
         #print('result_regression', result_regression)
@@ -94,8 +98,9 @@ def calculate(dict):
         dict['return_value'] = {return_key_result_regression:return_value_result_regression,'multiple_correlation':result_multiple_correlation,'r_square':result_r_square}
 
     except Exception as e:
-        #traceback.print_exc()
-        dict['error'] = 'calculate regression error'
+        traceback.print_exc()
+        if dict['error'] == '':
+            dict['error'] = 'calculate regression error'
     finally:
         return dict
 

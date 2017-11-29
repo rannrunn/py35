@@ -1,3 +1,4 @@
+# 소켓 서버를 구동하는 소스
 # coding: utf-8
 
 import datetime
@@ -25,7 +26,6 @@ def on_new_client(conn, client, port):
         # dictionary 데이터를 벨리데이션 하여 오류가 있을 경우 리턴
         dict_data = valid.validate_json(dict_data)
         if dict_data['error'] != '':
-            conn.send(json.dumps(dict_data).encode())
             raise Exception
 
         print ('[*] ' + client + ':' + port + ' : Request JSON Data : ', dict_data)

@@ -1,3 +1,6 @@
+# 공통 사항과 관련된 소스
+# coding: utf-8
+
 import pandas as pd
 import datetime
 
@@ -16,11 +19,12 @@ def getSector(dict):
 # DB에서 지점의 데이터를 가져온다.
 def getLocationData(cur, dict, tag_name):
     query = """
-                SELECT DATE_FORMAT(LOG_TIME, '%%Y-%%m-%%d %%H:%%i:%%s') AS LOG_TIME, TAG_VAL  
+                SELECT LOG_TIME, TAG_VAL  
                 FROM %s
                 WHERE 1 = 1
                 AND TAG_NAME = '%s'
-                AND LOG_TIME BETWEEN DATE_FORMAT('%s', '%%y%%m%%d%%H%%i%%s') AND DATE_FORMAT('%s', '%%y%%m%%d%%H%%i%%s')                
+                AND LOG_TIME BETWEEN DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i') AND DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i')    
+                ORDER BY LOG_TIME            
             """ % (getDictValue(dict, 'table'), tag_name, getDictValue(dict, 'time_start'), getDictValue(dict, 'time_end'))
     cur.execute(query)
     tuple = cur.fetchall()
@@ -44,13 +48,17 @@ def getDataFrame(cur, dict):
     df = pd.DataFrame(index=index_minutes)
     # 지점 리스트를 불러온다.
     list_sector = getSector(dict)
+    # 데이터가 없는 태그의 숫자 카운트
+    cnt_no_data = 0
     # 지점 데이터를 데이터 프레임에 추가한다.
     for item in list_sector:
         # 지점의 데이터를 가져온다.
         df_sector = getLocationData(cur, dict, item)
         # 데이터가 없을 경우 continue
         if len(df_sector) == 0:
-            dict['error'] = item + ' does not have data'
+            dict['error'] = dict['error'] + ' : ' + item + ' does not have data'
+            cnt_no_data += 1
+            continue
         # 인덱스를 LOG_TIME으로 설정한다.
         df_sector.set_index('LOG_TIME', inplace=True)
         # 컬럼명을 바꾼다.
@@ -58,10 +66,11 @@ def getDataFrame(cur, dict):
         # merge를 이용해 데이터를 inner join 한다.
         df = pd.merge(df, df_sector, left_index=True, right_index=True)
 
-    # 데이터 프레임의 데이터 중에 빈 값이 있는 row 는 제거해야 한다.
-    for idx in range(len(list_sector)):
-        df = df[(df[list_sector[idx]] != '')]
-        df = df[df[list_sector[idx]].notnull()]
+    # 데이터 프레임의 데이터 중에 빈 값이 있는 row 는 제거해야 한다
+    if len(list_sector) != cnt_no_data:
+        for idx in range(len(list_sector)):
+            df = df[(df[list_sector[idx]] != '')]
+            df = df[df[list_sector[idx]].notnull()]
     # 빈 값을 제거했으므로 데이터 형식을 float64로 바꿔준다.
     df = df.astype('float64')
     return df
