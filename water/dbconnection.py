@@ -13,9 +13,9 @@ import MySQLdb
 
 
 ip = 'localhost'
-id = 'kpipe'
-password = '1234'
-db_name = 'PIPEDB'
+id = 'root'
+password = '1111'
+db_name = 'WATER'
 
 
 def getConnection():

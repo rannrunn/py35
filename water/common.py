@@ -51,6 +51,8 @@ def getDataFrame(cur, dict):
     for item in list_sector:
         # 지점의 데이터를 가져온다.
         df_sector = getLocationData(cur, dict, item)
+        # dict['error'] 초기화
+        dict['error'] = dict['error'] if 'error' in dict else ''
         # 데이터가 없을 경우 continue
         if len(df_sector) == 0:
             dict['error'] = dict['error'] + ' : ' + item + ' does not have data'
@@ -62,12 +64,13 @@ def getDataFrame(cur, dict):
         df_sector.rename(columns={'TAG_VAL': item}, inplace=True)
         # merge를 이용해 데이터를 inner join 한다.
         df = pd.merge(df, df_sector, left_index=True, right_index=True)
-
+    print()
     # 데이터 프레임의 데이터 중에 빈 값이 있는 row 는 제거해야 한다
+    # if 조건에는 반드시 list_sector 와 cnt_no_data 를 비교해야 한다.
     if len(list_sector) != cnt_no_data:
-        for idx in range(len(list_sector)):
-            df = df[(df[list_sector[idx]] != '')]
-            df = df[df[list_sector[idx]].notnull()]
+        for item in df.columns:
+            df = df[(df[item] != '')]
+            df = df[df[item].notnull()]
     # 빈 값을 제거했으므로 데이터 형식을 float64로 바꿔준다.
     df = df.astype('float64')
     return df

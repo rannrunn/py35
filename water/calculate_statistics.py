@@ -10,12 +10,13 @@ import dbconnection as conn
 
 # 상관계수 : 지점 간의 상관계수를 모두 구해야 한다.
 def getCorrelation(cur, dict, df):
-    list_sector = comm.getSector(dict)
-    dict_return_value = {}
-    for idx_one in range(len(list_sector)):
-        for idx_two in range(idx_one + 1, len(list_sector)):
-            dict_return_value[list_sector[idx_one] + ',' + list_sector[idx_two]] = df[list_sector[idx_one]].corr(df[list_sector[idx_two]])
-    dict['return_value'] = {'correlation':dict_return_value}
+    dict_return_value = ''
+    for idx_one in range(len(df.columns)):
+        for idx_two in range(idx_one + 1, len(df.columns)):
+            dict_return_value += '\'' + df.columns[idx_one] + ',' + df.columns[idx_two] + '\':\'' + str(df[df.columns[idx_one]].corr(df[df.columns[idx_two]])) + '\','
+    # 쉼표 제거
+    dict_return_value = dict_return_value[:-1]
+    dict['return_value'] = 'correlation:{' + dict_return_value + '}'
     return dict
 
 # 요청에 따라 계산을 수행한다.
@@ -43,44 +44,49 @@ def calculate(dict):
 
         # 평균
         if command_detail == 'average':
-            list_sector = comm.getSector(dict)
-            dict_return_value = {}
-            for item in list_sector:
+            dict_return_value = ''
+            for item in df.columns:
                 series = df[item]
-                dict_return_value[item] = series.mean()
-            dict['return_value'] = {'average':dict_return_value}
+                dict_return_value += '\'' + item + '\':\'' + str(series.mean()) + '\','
+            # 쉼표 제거
+            dict_return_value = dict_return_value[:-1]
+            dict['return_value'] = 'average:{' + dict_return_value + '}'
         # 분산
         elif command_detail == 'variance':
-            list_sector = comm.getSector(dict)
-            dict_return_value = {}
-            for item in list_sector:
+            dict_return_value = ''
+            for item in df.columns:
                 series = df[item]
-                dict_return_value[item] = series.var()
-            dict['return_value'] = {'variance':dict_return_value}
+                dict_return_value += '\'' + item + '\':\'' + str(series.var()) + '\','
+            # 쉼표 제거
+            dict_return_value = dict_return_value[:-1]
+            dict['return_value'] = 'variance:{' + dict_return_value + '}'
         # 표준편차
         elif command_detail == 'standard_deviation':
-            list_sector = comm.getSector(dict)
-            dict_return_value = {}
-            for item in list_sector:
+            dict_return_value = ''
+            for item in df.columns:
                 series = df[item]
-                dict_return_value[item] = series.std()
-            dict['return_value'] = {'standard_deviation':dict_return_value}
+                dict_return_value += '\'' + item + '\':\'' + str(series.std()) + '\','
+            # 쉼표 제거
+            dict_return_value = dict_return_value[:-1]
+            dict['return_value'] = 'standard_deviation:{' + dict_return_value + '}'
         # 상관계수
         elif command_detail == 'correlation':
             dict = getCorrelation(cur, dict, df)
 
     except Exception as e:
-        traceback.print_exc()
+        #traceback.print_exc()
         if dict['error'] == '':
             dict['error'] = 'calculate statistics error'
     finally:
+        #print(dict)
         return dict
 
 if __name__ == '__main__':
     dict = {}
     dict['command'] = 'calculate_statistics'
     dict['command_to'] = 'server'
-    dict['command_detail'] = 'correlation'
+    # average, variance, standard_deviation, correlation
+    dict['command_detail'] = 'standard_deviation'
     dict['sector'] = '1'
     dict['table'] = 'RDR01MI_TB'
     dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'

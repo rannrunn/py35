@@ -94,13 +94,14 @@ def calculate(dict):
             return_value_result_regression += str(result_regression[idx][0]) + ','
         return_value_result_regression = return_value_result_regression[:-1]
 
-        dict['return_value'] = {return_key_result_regression:return_value_result_regression,'multiple_correlation':result_multiple_correlation,'r_square':result_r_square}
+        dict['return_value'] = return_key_result_regression + ':' + return_value_result_regression + '\nmultiple_correlation:' + str(result_multiple_correlation) + '\nr_square:' + str(result_r_square)
 
     except Exception as e:
-        traceback.print_exc()
+        #traceback.print_exc()
         if dict['error'] == '':
             dict['error'] = 'calculate regression error'
     finally:
+        #print(dict)
         return dict
 
 if __name__ == '__main__':
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     dict['command_to'] = 'server'
     dict['sector'] = '1'
     dict['table'] = 'RDR01MI_TB'
-    dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
+    dict['input'] = 'D_PALDANG, D_HONGTONG, D_YANGJECHEON'
     dict['output'] = 'D_PALDANG'
     dict['time_start'] = '2017-06-01 11:22:00'
     dict['time_end'] = '2017-08-27 13:22:00'

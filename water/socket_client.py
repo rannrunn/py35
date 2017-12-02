@@ -19,8 +19,10 @@ def main():
     dict['command_to'] = 'server'
     time_start = '2017-07-01 00:00:00'
     time_end = '2017-11-21 00:00:00'
-    dict['input'] = 'PDILCGS.PDI_FI_TOTAL.F_CV'
-    dict['output'] = 'PDILCGS.PDI_PT601C.F_CV'
+    dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
+    dict['output'] = 'D_PALDANG'
+    #dict['input'] = 'PDILCGS.PDI_FI_TOTAL.F_CV'
+    #dict['output'] = 'PDILCGS.PDI_PT601C.F_CV'
 
     if command == 'calculate_statistics':
         if command_detail == 'correlation':
@@ -52,7 +54,9 @@ def main():
     try:
         response = client.recv(4096)
         dec_data = response.decode()
+        dec_data_json = json.loads(dec_data)
         print('response_data :', dec_data)
+        print('return_value :', dec_data_json['return_value'])
     except Exception as ex:
         # print('Exception:')
         print('Exception')
