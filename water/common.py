@@ -69,7 +69,6 @@ def getDataFrame(cur, dict):
         df_sector.rename(columns={'TAG_VAL': item}, inplace=True)
         # merge를 이용해 데이터를 inner join 한다.
         df = pd.merge(df, df_sector, left_index=True, right_index=True)
-    print()
     # 데이터 프레임의 데이터 중에 빈 값이 있는 row 는 제거해야 한다
     # if 조건에는 반드시 list_sector 와 cnt_no_data 를 비교해야 한다.
     if len(list_sector) != cnt_no_data:

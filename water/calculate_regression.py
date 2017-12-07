@@ -22,10 +22,14 @@ def setY(df):
 
 # pseudo inverse를 이용해 회귀분석
 def methodOfLeastSquares(A, Y):
-    #A = np.array([[1, 1],[2, 1],[3, 1],[4, 1]])
-    #Y = np.array([[1],[2],[3],[4]])
-    Apinv = np.dot(np.linalg.inv(np.dot(A.T, A)), A.T)
-    x, resid, rank, s = np.linalg.lstsq(A, Y)
+    x = np.array([])
+    try:
+        #A = np.array([[1, 1],[2, 1],[3, 1],[4, 1]])
+        #Y = np.array([[1],[2],[3],[4]])
+        Apinv = np.dot(np.linalg.inv(np.dot(A.T, A)), A.T)
+        x, resid, rank, s = np.linalg.lstsq(A, Y)
+    except Exception as e:
+        pass
     return x
 
 # 다중상관계수 계산
@@ -40,11 +44,11 @@ def getMultipleCorrelation(df, result_regression):
     A = df_two.iloc[:,0]
     B = df_two.iloc[:,1]
     # 다중상관계수를 계산하여 리턴
-    return A.corr(B)
+    return round(A.corr(B), 4)
 
 # 결정계수 계산
 def getRSquare(result_multiple_correlation):
-    return result_multiple_correlation ** 2
+    return round(result_multiple_correlation ** 2, 4)
 
 
 # 회귀분석에 대한 계산을 한다.
@@ -67,12 +71,19 @@ def calculate(dict):
         # 데이터를 불러온다.
         df = comm.getDataFrame(cur, dict)
 
+
+
         if 'error' in dict and dict['error'] != '':
             raise Exception
 
         # 회귀 분석에 대한 결과를 가져온다.
         result_regression = methodOfLeastSquares(setA(df), setY(df))
         #print('result_regression', result_regression)
+
+        # 회귀 분석의 결과값이 없을 경우 '데이터를 확인해 보세요'를 반환
+        if len(result_regression) == 0:
+            dict['return_value'] = 'Check the data'
+            return dict
 
         # 다중 상관계수 계산
         result_multiple_correlation = getMultipleCorrelation(df, result_regression)
@@ -91,7 +102,7 @@ def calculate(dict):
         return_key_result_regression += 'bias'
         # 회귀계수
         for idx in range(len(result_regression)):
-            return_value_result_regression += str(result_regression[idx][0]) + ','
+            return_value_result_regression += str(round(result_regression[idx][0], 4)) + ','
         return_value_result_regression = return_value_result_regression[:-1]
 
         dict['return_value'] = return_key_result_regression + ':' + return_value_result_regression + '\nmultiple_correlation:' + str(result_multiple_correlation) + '\nr_square:' + str(result_r_square)

@@ -12,9 +12,9 @@ def main():
     # calculate_abnormal
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_regression'
+    command = 'calculate_statistics'
     # average, variance, standard_deviation,
-    command_detail = 'correlation'
+    command_detail = 'average'
 
     dict = {}
     dict['command'] = command
