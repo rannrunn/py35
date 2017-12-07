@@ -3,6 +3,7 @@
 import socket
 import time
 import json
+import traceback
 
 def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -10,36 +11,33 @@ def main():
 
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_statistics'
+    command = 'calculate_regression'
     # average, variance, standard_deviation, correlation
     command_detail = 'correlation'
 
     dict = {}
     dict['command'] = command
     dict['command_to'] = 'server'
-    time_start = '2017-07-01 00:00:00'
-    time_end = '2017-11-21 00:00:00'
-    dict['input'] = 'D_GWANGAM, D_HONGTONG, D_YANGJECHEON'
-    dict['output'] = 'D_PALDANG'
+    time_start = '2017-12-05 01:01:00'
+    time_end = '2017-12-05 01:10:00'
+    dict['input'] = 'SD_PR_CAL_TAG_32,SD_PR_CAL_TAG_33'
+    dict['output'] = 'SD_FR_OUT_TAG_11'
     #dict['input'] = 'PDILCGS.PDI_FI_TOTAL.F_CV'
     #dict['output'] = 'PDILCGS.PDI_PT601C.F_CV'
+    dict['sector'] = '001'
+    dict['table'] = 'RDR01MI_CAL_TB'
+
 
     if command == 'calculate_statistics':
         if command_detail == 'correlation':
             dict['command_detail'] = command_detail
-            dict['sector'] = '001'
-            dict['table'] = 'RDR01MI_TB'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
         else:
             dict['command_detail'] = command_detail
-            dict['sector'] = '001'
-            dict['table'] = 'RDR01MI_TB'
             dict['time_start'] = time_start
             dict['time_end'] = time_end
     elif command == 'calculate_regression':
-        dict['sector'] = '001'
-        dict['table'] = 'RDR01MI_TB'
         dict['time_start'] = time_start
         dict['time_end'] = time_end
 
@@ -58,7 +56,7 @@ def main():
         print('response_data :', dec_data)
         print('return_value :', dec_data_json['return_value'])
     except Exception as ex:
-        # print('Exception:')
+        traceback.print_exc()
         print('Exception')
 
 if __name__ == '__main__':

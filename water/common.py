@@ -16,13 +16,18 @@ def getSector(dict):
 # DB에서 지점의 데이터를 가져온다.
 def getLocationData(cur, dict, tag_name):
     query = """
-                SELECT DATE_FORMAT(CONCAT(LOG_TIME, '00'), '%%Y-%%m-%%d %%H:%%i:%%s') AS LOG_TIME, TAG_VAL  
-                FROM %s
+                SELECT DATE_FORMAT(CONCAT(S.LOG_TIME, '00'), '%%Y-%%m-%%d %%H:%%i:%%s') AS LOG_TIME, MAX(TAG_VAL) AS TAG_VAL  
+                FROM %s S
                 WHERE 1 = 1
                 AND TAG_NAME = '%s'
-                AND LOG_TIME BETWEEN DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i') AND DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i')    
-                ORDER BY LOG_TIME            
+                AND DATE_FORMAT(CONCAT(S.LOG_TIME, '00'), '%%Y-%%m-%%d %%H:%%i:%%s') IS NOT NULL
+                AND S.LOG_TIME BETWEEN DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i') AND DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i') 
+                AND TAG_VAL REGEXP '^[0-9]+\\.?[0-9]*$'
+                AND TAG_VAL IS NOT NULL
+                GROUP BY S.LOG_TIME, TAG_NAME
+                ORDER BY S.LOG_TIME            
             """ % (getDictValue(dict, 'table'), tag_name, getDictValue(dict, 'time_start'), getDictValue(dict, 'time_end'))
+    #print(query)
     cur.execute(query)
     tuple = cur.fetchall()
     return pd.DataFrame(list(tuple))

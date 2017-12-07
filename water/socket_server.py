@@ -22,17 +22,18 @@ def on_new_client(conn, client, port):
         dec_data = data.decode()
         dict_data = json.loads(dec_data)
 
-        # dictionary 데이터를 벨리데이션 하여 오류가 있을 경우 리턴
-        dict_data = valid.validate_json(dict_data)
-        if 'error' in dict_data and dict_data['error'] != '':
-            raise Exception
-
         print ('[*] ' + client + ':' + port + ' : Request JSON Data : ', dict_data)
 
         command = getDictValue(dict_data, 'command')
         command_detail = getDictValue(dict_data, 'command_detail')
 
         dict_data['command_to'] = 'client'
+        dict_data['return_value'] = ''
+
+        # dictionary 데이터를 벨리데이션 하여 오류가 있을 경우 리턴
+        dict_data = valid.validate_json(dict_data)
+        if 'error' in dict_data and dict_data['error'] != '':
+            raise Exception
 
         if command == 'calculate_statistics':
             if command_detail == 'average':
