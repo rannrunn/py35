@@ -61,6 +61,7 @@ def getDataFrame(cur, dict):
         # 데이터가 없을 경우 continue
         if len(df_sector) == 0:
             dict['error'] = dict['error'] + ' : ' + item + ' does not have data'
+            dict['return_value'] = 'Check the data'
             cnt_no_data += 1
             continue
         # 인덱스를 LOG_TIME으로 설정한다.

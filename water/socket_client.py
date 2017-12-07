@@ -11,15 +11,15 @@ def main():
 
     # calculate_statistics
     # calculate_regression
-    command = 'calculate_regression'
+    command = 'calculate_statistics'
     # average, variance, standard_deviation, correlation
     command_detail = 'correlation'
 
     dict = {}
     dict['command'] = command
     dict['command_to'] = 'server'
-    time_start = '2017-11-14 10:01:00'
-    time_end = '2017-11-14 10:07:00'
+    time_start = '2017-01-14 10:01:00'
+    time_end = '2017-01-14 10:01:00'
     dict['input'] = 'SD_PR_CAL_TAG_21,SD_PR_CAL_TAG_22'
     dict['output'] = 'SD_FR_OUT_TAG_13'
     #dict['input'] = 'PDILCGS.PDI_FI_TOTAL.F_CV'
