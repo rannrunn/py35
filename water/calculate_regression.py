@@ -108,11 +108,12 @@ def calculate(dict):
         dict['return_value'] = return_key_result_regression + ':' + return_value_result_regression + '\nmultiple_correlation:' + str(result_multiple_correlation) + '\nr_square:' + str(result_r_square)
 
     except Exception as e:
-        #traceback.print_exc()
+        traceback.print_exc()
         if dict['error'] == '':
             dict['error'] = 'calculate regression error'
     finally:
         #print(dict)
+        con.close()
         return dict
 
 if __name__ == '__main__':

@@ -17,7 +17,6 @@ def getCorrelation(cur, dict, df):
     for idx_one in range(len(df.columns)):
         for idx_two in range(idx_one + 1, len(df.columns)):
             try:
-                # 상관계수를 구할 때 분모가 0인 경우 Exception이 발생하는데 런타임 Exception으로 뜨고 에러 로그를 콘솔에 출력하지 않도록 처리할 수 없다.
                 dict_return_value += '\n\'' + df.columns[idx_one] + ',' + df.columns[idx_two] + '\':\'' + str(round(df[df.columns[idx_one]].corr(df[df.columns[idx_two]]), 4)) + '\','
                 if str(round(df[df.columns[idx_one]].corr(df[df.columns[idx_two]]), 4)) == 'nan':
                     bool_check = True
@@ -95,7 +94,7 @@ def calculate(dict):
             dict = getCorrelation(cur, dict, df)
 
     except Exception as e:
-        #traceback.print_exc()
+        traceback.print_exc()
         if dict['error'] == '':
             dict['error'] = 'calculate statistics error'
     finally:

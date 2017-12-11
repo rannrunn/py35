@@ -13,19 +13,19 @@ def main():
     # calculate_regression
     command = 'calculate_statistics'
     # average, variance, standard_deviation, correlation
-    command_detail = 'correlation'
+    command_detail = 'average'
 
     dict = {}
     dict['command'] = command
     dict['command_to'] = 'server'
-    time_start = '2017-01-14 10:01:00'
-    time_end = '2017-01-14 10:01:00'
+    time_start = '2017-12-05 00:00:00'
+    time_end = '2017-12-07 00:00:00'
     dict['input'] = 'SD_PR_CAL_TAG_21,SD_PR_CAL_TAG_22'
-    dict['output'] = 'SD_FR_OUT_TAG_13'
+    dict['output'] = 'SD_FR_OUT_TAG_11'
     #dict['input'] = 'PDILCGS.PDI_FI_TOTAL.F_CV'
     #dict['output'] = 'PDILCGS.PDI_PT601C.F_CV'
     dict['sector'] = '001'
-    dict['table'] = 'rdr10mi_cal_tb'
+    dict['table'] = 'RDR01MI_CAL_TB'
 
 
     if command == 'calculate_statistics':

@@ -22,12 +22,11 @@ def getLocationData(cur, dict, tag_name):
                 AND TAG_NAME = '%s'
                 AND DATE_FORMAT(CONCAT(S.LOG_TIME, '00'), '%%Y-%%m-%%d %%H:%%i:%%s') IS NOT NULL
                 AND S.LOG_TIME BETWEEN DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i') AND DATE_FORMAT('%s', '%%Y%%m%%d%%H%%i') 
-                AND TAG_VAL REGEXP '^[0-9]+\\.?[0-9]*$'
                 AND TAG_VAL IS NOT NULL
                 GROUP BY S.LOG_TIME, TAG_NAME
                 ORDER BY S.LOG_TIME            
             """ % (getDictValue(dict, 'table'), tag_name, getDictValue(dict, 'time_start'), getDictValue(dict, 'time_end'))
-    #print(query)
+    print(query)
     cur.execute(query)
     tuple = cur.fetchall()
     return pd.DataFrame(list(tuple))
@@ -78,4 +77,5 @@ def getDataFrame(cur, dict):
             df = df[df[item].notnull()]
     # 빈 값을 제거했으므로 데이터 형식을 float64로 바꿔준다.
     df = df.astype('float64')
+    #print(df)
     return df

@@ -36,13 +36,17 @@ def calculate(dict):
 
         dict['command_to'] = 'client'
 
+    # dict['input'] = 'P_ORYUN_T, P_3T_1DAN, P_3T_INCHEON_1DAN, P_GWANGAM, P_36T_4DAN, D_HONGTONG, D_LOTTE_IN'
+
         # 데이터를 불러온다.
         df = comm.getDataFrame(cur, dict)
-        df['X1'] = df['P_ORYUN_1'] - df['P_SONGPA_1']
-        df['X2'] = df['P_ORYUN_2'] - df['P_SONGPA_2']
-        df['Y'] = df['D_HONGTONG'] - df['D_LOTTE_IN']
+        df['x1'] = df['P_3T_1DAN'] - df['P_3T_INCHEON_1DAN']
+        df['x2'] = df['P_3T_1DAN'] - df['P_GWANGAM']
+        df['x3'] = df['P_3T_1DAN'] - df['P_36T_4DAN']
+        df['x4'] = df['P_3T_1DAN'] - df['P_ORYUN_T']
+        df['y'] = df['D_HONGTONG'] + df['D_LOTTE_IN']
         print(df)
-        df.to_csv('c:\\temp\\ss.csv')
+        df.to_csv('c:\\temp\\section01.csv')
         if 'error' in dict and dict['error'] != '':
             raise Exception
 
@@ -93,8 +97,8 @@ if __name__ == '__main__':
     dict['command_detail'] = 'standard_deviation'
     dict['sector'] = '1'
     dict['table'] = 'TB_WATER'
-    dict['input'] = 'D_HONGTONG, D_LOTTE_IN, P_ORYUN_1, P_ORYUN_2, P_SONGPA_1, P_SONGPA_2'
-    dict['output'] = 'D_PALDANG'
+    dict['input'] = 'P_ORYUN_T, P_3T_1DAN, P_3T_INCHEON_1DAN, P_GWANGAM, P_36T_4DAN, D_HONGTONG, D_LOTTE_IN'
+    dict['output'] = 'STL'
     dict['time_start'] = '2017-06-01 11:22:00'
     dict['time_end'] = '2017-08-27 13:22:00'
 
