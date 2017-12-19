@@ -8,7 +8,7 @@
 #
 # We will use the iris data, specifically:
 #  y = Sepal Length
-#  x = Pedal Width
+#  x = petal Width
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -105,8 +105,8 @@ plt.plot(x_vals, best_fit_upper, 'r--', linewidth=2)
 plt.plot(x_vals, best_fit_lower, 'r--', linewidth=2)
 plt.ylim([0, 10])
 plt.legend(loc='lower right')
-plt.title('Sepal Length vs Pedal Width')
-plt.xlabel('Pedal Width')
+plt.title('Sepal Length vs petal Width')
+plt.xlabel('petal Width')
 plt.ylabel('Sepal Length')
 plt.show()
 

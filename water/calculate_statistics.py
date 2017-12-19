@@ -99,6 +99,7 @@ def calculate(dict):
             dict['error'] = 'calculate statistics error'
     finally:
         #print(dict)
+        con.close()
         return dict
 
 if __name__ == '__main__':

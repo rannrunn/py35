@@ -28,7 +28,7 @@ dict_section['section07_03'] = '3' # 양재23T의 압력이 없어서 추후 시
 # 옵션 : train, predict
 option = 'predict'
 # section
-section = 'section07_02'
+section = 'section01'
 # 데이터프레임 구간 사용유무
 bool_section = False
 # 데이터프레임 시작지점

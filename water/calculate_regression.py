@@ -20,13 +20,10 @@ def setY(df):
     result_df = df.reindex(columns=list(df.columns[-1:]))
     return result_df.values
 
-# pseudo inverse를 이용해 회귀분석
+# 최소제곱법을 이용해 회귀분석
 def methodOfLeastSquares(A, Y):
     x = np.array([])
     try:
-        #A = np.array([[1, 1],[2, 1],[3, 1],[4, 1]])
-        #Y = np.array([[1],[2],[3],[4]])
-        Apinv = np.dot(np.linalg.inv(np.dot(A.T, A)), A.T)
         x, resid, rank, s = np.linalg.lstsq(A, Y)
     except Exception as e:
         pass
@@ -108,6 +105,7 @@ def calculate(dict):
         dict['return_value'] = return_key_result_regression + ':' + return_value_result_regression + '\nmultiple_correlation:' + str(result_multiple_correlation) + '\nr_square:' + str(result_r_square)
 
     except Exception as e:
+        import traceback
         traceback.print_exc()
         if dict['error'] == '':
             dict['error'] = 'calculate regression error'

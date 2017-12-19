@@ -8,7 +8,11 @@
 #
 # We will use the iris data, specifically:
 #  y = Sepal Length
-#  x = Pedal Width
+#  x = petal Width
+
+# Iris Setosa
+# Iris Versicolour
+# Iris Virginica
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,16 +27,28 @@ sess = tf.Session()
 # Load the data
 # iris.data = [(Sepal Length, Sepal Width, Petal Length, Petal Width)]
 iris = datasets.load_iris()
+print(iris)
 x_vals = np.array([x[3] for x in iris.data])
 y_vals = np.array([y[0] for y in iris.data])
 
+print('x_vals', x_vals)
+print('y_vals', y_vals)
+
 # Split data into train/test sets
 train_indices = np.random.choice(len(x_vals), round(len(x_vals)*0.8), replace=False)
+print('train_indices', train_indices)
 test_indices = np.array(list(set(range(len(x_vals))) - set(train_indices)))
+print('test_indices', test_indices)
 x_vals_train = x_vals[train_indices]
 x_vals_test = x_vals[test_indices]
 y_vals_train = y_vals[train_indices]
 y_vals_test = y_vals[test_indices]
+
+print('x_vals_train', x_vals_train)
+print('x_vals_test', x_vals_test)
+print('y_vals_train', y_vals_train)
+print('y_vals_test', y_vals_test)
+
 
 # Declare batch size
 batch_size = 50
@@ -84,37 +100,44 @@ for i in range(200):
         print('Train Loss = ' + str(temp_train_loss))
         print('Test Loss = ' + str(temp_test_loss))
 
-# Extract Coefficients
-[[slope]] = sess.run(A)
-[[y_intercept]] = sess.run(b)
-[width] = sess.run(epsilon)
+        # Extract Coefficients
+        [[slope]] = sess.run(A)
+        [[y_intercept]] = sess.run(b)
+        [width] = sess.run(epsilon)
 
-# Get best fit line
-best_fit = []
-best_fit_upper = []
-best_fit_lower = []
-for i in x_vals:
-    best_fit.append(slope*i+y_intercept)
-    best_fit_upper.append(slope*i+y_intercept+width)
-    best_fit_lower.append(slope*i+y_intercept-width)
+        print('slope', slope)
+        print('y_intercept', y_intercept)
+        print('width', width)
 
-# Plot fit with data
-plt.plot(x_vals, y_vals, 'o', label='Data Points')
-plt.plot(x_vals, best_fit, 'r-', label='SVM Regression Line', linewidth=3)
-plt.plot(x_vals, best_fit_upper, 'r--', linewidth=2)
-plt.plot(x_vals, best_fit_lower, 'r--', linewidth=2)
-plt.ylim([0, 10])
-plt.legend(loc='lower right')
-plt.title('Sepal Length vs Pedal Width')
-plt.xlabel('Pedal Width')
-plt.ylabel('Sepal Length')
-plt.show()
+        # Get best fit line
+        best_fit = []
+        best_fit_upper = []
+        best_fit_lower = []
+        for i in x_vals:
+            best_fit.append(slope*i+y_intercept)
+            best_fit_upper.append(slope*i+y_intercept+width)
+            best_fit_lower.append(slope*i+y_intercept-width)
 
-# Plot loss over time
-plt.plot(train_loss, 'k-', label='Train Set Loss')
-plt.plot(test_loss, 'r--', label='Test Set Loss')
-plt.title('L2 Loss per Generation')
-plt.xlabel('Generation')
-plt.ylabel('L2 Loss')
-plt.legend(loc='upper right')
-plt.show()
+        # Plot fit with data
+        plt.plot(x_vals, y_vals, 'o', label='Data Points')
+        plt.plot(x_vals, best_fit, 'r-', label='SVM Regression Line', linewidth=3)
+        plt.plot(x_vals, best_fit_upper, 'r--', linewidth=2)
+        plt.plot(x_vals, best_fit_lower, 'r--', linewidth=2)
+        plt.ylim([0, 10])
+        plt.legend(loc='lower right')
+        plt.title('Sepal Length vs petal Width')
+        plt.xlabel('petal Width')
+        plt.ylabel('Sepal Length')
+        plt.show()
+
+        print('train_loss', train_loss)
+        print('test_loss', test_loss)
+
+        # Plot loss over time
+        plt.plot(train_loss, 'k-', label='Train Set Loss')
+        plt.plot(test_loss, 'r--', label='Test Set Loss')
+        plt.title('L2 Loss per Generation')
+        plt.xlabel('Generation')
+        plt.ylabel('L2 Loss')
+        plt.legend(loc='upper right')
+        plt.show()
