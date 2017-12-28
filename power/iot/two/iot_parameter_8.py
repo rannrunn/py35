@@ -1,106 +1,95 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import os
-import multiprocessing as mp
 import traceback
-import warnings
-warnings.simplefilter("error")
+import time
+import os
 
-list_value = ['AMBIENT', 'BATTERY', 'HUMI', 'TEMP', 'PITCH', 'ROLL', 'UV', 'PRESS']
+variable_all = ['TIME_ID', 'AMBIENT', 'BATTERY', 'HUMI', 'TEMP', 'PITCH', 'ROLL', 'UV', 'PRESS']
+variable_plot = ['AMBIENT', 'BATTERY', 'HUMI', 'TEMP', 'PITCH', 'ROLL', 'UV', 'PRESS']
 limit_data = {'AMBIENT':[0, 81900],'BATTERY':[0, 100],'HUMI':[0, 100],'TEMP':[-15, 65],'PITCH':[-180, 180],'ROLL':[-90, 90],'UV':[0, 20.48],'PRESS':[300, 1100]}
-limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'TEMP':[-15, 65], 'PITCH':[-185, 185], 'ROLL':[-95, 95], 'UV':[-1, 22], 'PRESS':[290, 1110]}
+limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'TEMP':[-15, 65], 'PITCH':[-185, 185], 'ROLL':[-95, 95], 'UV':[-1, 22], 'PRESS':[-10, 1110]}
 
-def getPole(pole_id):
-    os.chdir('F:\\IOT\\data')
-    data = pd.read_csv(pole_id + '.csv')
-    start = '2016-04-01 00:00:00'
-    end = '2017-05-15 23:59:59'
+def getPole(dir_data, pole_id, time_start, time_end, resample_how):
+    data = pd.read_csv(dir_data + pole_id + '.csv')
 
-    pole_data = data[['TIME_ID', 'AMBIENT', 'BATTERY', 'HUMI', 'PITCH', 'ROLL', 'PRESS', 'TEMP', 'UV']]
-    pole_data['TIME_ID'] = pd.to_datetime(pole_data['TIME_ID'], format='%Y-%m-%d %H:%M:%S')
-    # pole_data = pole_data[0:100]
-    # print(pole_data)
+    # 1. 깊은복사를 해야 경고 메시지가 뜨지 않는다.
+    # 2. 깊은복사를 하면 데이터 처리 속도가 빨라진다.
+    pole_data = data[variable_all].copy()
+    # inplace True => 제자리에서 변경(새로운 DataFrame을 생성하지 않음)
+    pole_data.set_index('TIME_ID', inplace=True)
+    pole_data.index = pd.to_datetime(pole_data.index)
 
-    for item in list_value:
-        mask = pole_data[item] < limit_data[item][0]
-        pole_data.loc[mask, item] = None
+    # 아웃라이어 제거
+    for item in variable_plot:
+        if item in limit_data.keys():
+            mask = pole_data[item] < limit_data[item][0]
+            pole_data.loc[mask, item] = None
 
-        mask = pole_data[item] > limit_data[item][1]
-        pole_data.loc[mask, item] = None
+            mask = pole_data[item] > limit_data[item][1]
+            pole_data.loc[mask, item] = None
 
-    # data의 주기가 일정하지 않아 초 단위로 time_id 컬럼을 가진 data_time 생성
-    start_time = pd.to_datetime(start, format='%Y-%m-%d %H:%M:%S')
-    end_time = pd.to_datetime(end, format='%Y-%m-%d %H:%M:%S')
-    time_range = pd.date_range(start_time, end_time, freq='s')
-    data_time = pd.DataFrame(time_range)
-    data_time.rename(columns={0: 'TIME_ID'}, inplace=True)  # inplace=True: data_time을 직접 변경
+    # resample을 하기 위해서는 인덱스의 형식이 datetime 형식이어야 한다.
+    pole_data = pole_data.resample(resample_how).mean()
+    date_range = pd.date_range(time_start, time_end, freq=resample_how)
+    pole_data = pole_data.reindex(date_range)
 
-    # time_id를 기준으로 data_time과 data_sensor merge
-    # data_temp = pd.merge(data_time, pole_data, on='TIME_ID', how='left')
-    data_temp=data_time.merge(pole_data, on='TIME_ID', how='left')
-    data_temp['TIME_ID'] = pd.to_datetime(data_temp['TIME_ID'], format='%Y-%m-%d %H:%M:%S')
-    # index를 time_id로 지정
-    data_temp.set_index(data_temp['TIME_ID'], inplace=True)
-    data_temp = data_temp.drop('TIME_ID', 1)
-    data_temp.index.names = [None]
-    data_temp=data_temp.resample('10T').max()
+    return pole_data
 
+def saveImage(path_dir, pole_id, time_start, time_end, resample_how):
+    start_time = time.time()
 
-    return data_temp
+    # 데이터 디렉토리 체크
+    dir_data = path_dir + 'data\\'
+    if not os.path.isdir(dir_data):
+        print('데이터 디렉토리가 존재하지 않습니다.')
+        return
 
+    # 아웃풋 디렉토리 체크
+    dir_output = path_dir + 'output\\'
+    if not os.path.isdir(dir_output):
+        os.mkdir(dir_output)
 
-def saveImage(pole_id):
-    print(pole_id)
-    df = getPole(pole_id)
+    # 전주의 데이터를 가져온다.
+    df = getPole(dir_data, pole_id, time_start, time_end, resample_how)
 
     fig = plt.figure(figsize=(20, 15))
     fig.suptitle(pole_id)
-    ax1 = fig.add_subplot(8, 1, 1)
-    ax2 = fig.add_subplot(8, 1, 2)
-    ax3 = fig.add_subplot(8, 1, 3)
-    ax4 = fig.add_subplot(8, 1, 4)
-    ax5 = fig.add_subplot(8, 1, 5)
-    ax6 = fig.add_subplot(8, 1, 6)
-    ax7 = fig.add_subplot(8, 1, 7)
-    ax8 = fig.add_subplot(8, 1, 8)
 
-    ax1.plot(df['AMBIENT'])
-    ax2.plot(df['BATTERY'])
-    ax3.plot(df['HUMI'])
-    ax4.plot(df['TEMP'])
-    ax5.plot(df['PITCH'])
-    ax6.plot(df['ROLL'])
-    ax7.plot(df['UV'])
-    ax8.plot(df['PRESS'])
-
-    ax1.set_ylabel('AMBIENT')
-    ax2.set_ylabel('BATTERY')
-    ax3.set_ylabel('HUMI')
-    ax4.set_ylabel('TEMP')
-    ax5.set_ylabel('PITCH')
-    ax6.set_ylabel('ROLL')
-    ax7.set_ylabel('UV')
-    ax8.set_ylabel('PRESS')
+    # plot 할 때 모든 인덱스를 출력하기 위해 맨 처음 행과 맨 마지막 행에 값 삽입
+    # 꼼수이기 때문에 다른 방법이 있다면 바꿔야 한다.
+    df.iloc[0, :] = 0
+    df.iloc[-1, :] = 0
 
     cnt = 0
-    # 조도, 베터리, 습도, 온도, 피치, 롤, UV, 대기압)
-    for item in list_value:
+    for item in variable_plot:
         cnt = cnt + 1
+        exec('ax' + str(cnt) + ' = fig.add_subplot(' + str(len(variable_plot)) + ', 1, ' + str(cnt) + ')')
+        eval('ax' + str(cnt) + '.plot(df[\'' + item + '\'])')
+        eval('ax' + str(cnt) + '.set_ylabel(\'' + item + '\')')
         eval('ax' + str(cnt) + '.set_ylim(' + str(limit_ylim[item]) + ')')
 
-    plt.grid()
+    print(pole_id + ':' + str(round(time.time() - start_time, 4)))
+
     try:
-        fig.savefig('F:\\IOT\\output\\' + pole_id + '.png', format='png')
+        fig.savefig(dir_output + pole_id + '.png', format='png')
+        plt.close(fig)
     except Exception as ex:
         traceback.print_exc()
-        print('F:\\IOT\\output\\' + pole_id + '.png')
-
-    # plt.show()
-
+        print('Exception:' + pole_id)
+    finally:
+        plt.close(fig)
 
 if __name__ == '__main__':
-    os.chdir('F:\\IOT')
-    pole = pd.read_csv('pole_id_233.csv')
+    start_time_main = time.time()
+    path_dir = 'F:\\IOT\\'
+    pole = pd.read_csv(path_dir + 'pole_id_233.csv')
+    time_start = '2016-04-01 00:00:00'
+    time_end = '2017-05-15 23:59:59'
+    resample_how = '10T'
+
     for pole_id in pole['pole_id']:
-        saveImage(pole_id)
+        saveImage(path_dir, pole_id, time_start, time_end, resample_how)
+
+    print('Total Time:' + str(round(time.time() - start_time_main, 4)))
+
 
