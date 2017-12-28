@@ -11,7 +11,7 @@ limit_data = {'AMBIENT':[0, 81900],'BATTERY':[0, 100],'HUMI':[0, 100],'TEMP':[-1
 limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'TEMP':[-15, 65], 'PITCH':[-185, 185], 'ROLL':[-95, 95], 'UV':[-1, 22], 'PRESS':[290, 1110]}
 
 def getPole(pole_id):
-    os.chdir('F:\\노주희\\data')
+    os.chdir('F:\\IOT\\data')
     data = pd.read_csv(pole_id + '.csv')
     start = '2016-04-01 00:00:00'
     end = '2017-05-15 23:59:59'
@@ -90,16 +90,16 @@ def saveImage(pole_id):
 
     plt.grid()
     try:
-        fig.savefig('F:\\노주희\\output\\' + pole_id + '.png', format='png')
+        fig.savefig('F:\\IOT\\output\\' + pole_id + '.png', format='png')
     except Exception as ex:
         traceback.print_exc()
-        print('F:\\노주희\\output\\' + pole_id + '.png')
+        print('F:\\IOT\\output\\' + pole_id + '.png')
 
     # plt.show()
 
 
 if __name__ == '__main__':
-    os.chdir('F:\\노주희')
+    os.chdir('F:\\IOT')
     pole = pd.read_csv('pole_id_233.csv')
     for pole_id in pole['pole_id']:
         saveImage(pole_id)
