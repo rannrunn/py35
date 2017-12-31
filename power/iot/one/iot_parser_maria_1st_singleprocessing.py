@@ -1,5 +1,5 @@
-# 2차 파일 들을 멀티코어를 사용하여 insert 하기 위한 소스
-# sensor_xml_data_20170515 자료에 맞게 iot_parser_maria_1st.py 소스를 수정
+# 2차 파일 들을 싱글코어를 사용하여 insert 하기 위한 소스
+# sensor_xml_data_20170515 자료에 맞게 iot_parser_maria_2nd.py 소스를 수정
 # sensor_xml_data_20170515 에 들어 있는 자료의 키는 모두 5개이다
 # coding: utf-8
 import xmltodict
@@ -9,10 +9,6 @@ import os.path
 import MySQLdb
 import time
 import traceback
-import threading
-import logging
-import os
-from multiprocessing import Process
 
 # DB 에 여러개 데이터를 한번에 인서트 하기 위한 list 생성
 def make_values_list(values_list, dict):
@@ -27,7 +23,7 @@ def insert_execute(con, cur, query_insert, values_list):
     values_list = []
     return values_list
 
-def parser(name):
+def parser(dir, name):
 
     # MariaDB connection
     con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
@@ -36,13 +32,6 @@ def parser(name):
     cur.execute('SET NAMES utf8;')
     cur.execute('SET CHARACTER SET utf8;')
     cur.execute('SET character_set_connection=utf8;')
-
-    start = time.time()
-
-    # XML 주요 키 세 가지와 그의 서브 키
-    key_m2m = ["con","ri","pi","current","shock"]
-    key_con = ["accero","temp","humi","ambient","uv","press","battery","period","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc","current","shock"]
-    key_accero = ["pitch","roll","current","shock"]
 
     cnt = 0
     cnt_batch = 10000
@@ -53,16 +42,17 @@ def parser(name):
     columns = ','.join(dict_initial.keys())
 
     # 파일명을 변경해 가면서 인서트
-    file_name = 'D:/010_data/kepco/iot_pole/2nd/'+ name
+    file_name = dir + name
 
     if not os.path.exists(file_name):
         return
 
-    # 테이블명
+    # 테이블 설정
     table = 'tb_iot_pole_' + name[13:19]
+    # insert 구문 설정
     query_insert = "insert into " + table + "(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
-    # dictionary에 파일명 추가
+    # 파일명 설정
     dict_initial['file_name'] = os.path.basename(file_name)
 
     f = open(file_name, 'rt', encoding='UTF8')
@@ -142,10 +132,15 @@ def parser(name):
     f.close()
     con.close()
 
-
 if __name__ == '__main__':
 
-    # names = ['t_SENSOR_XML_201604_test.dat']
+    start = time.time()
+
+    # XML 주요 키 세 가지와 그의 서브 키
+    key_m2m = ["con","ri","pi","current","shock"]
+    key_con = ["accero","temp","humi","ambient","uv","press","battery","period","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc","current","shock"]
+    key_accero = ["pitch","roll","current","shock"]
+
     # insert할 파일의 리스트
     names = ['t_SENSOR_XML_201604_2274787.dat'
         ,'t_SENSOR_XML_201605_1895870.dat'
@@ -157,12 +152,7 @@ if __name__ == '__main__':
         ,'t_SENSOR_XML_201611_5084265.dat'
         ,'t_SENSOR_XML_201612_20170515_30571302.txt']
 
-    # 멀티스로세싱
-    procs = []
-    for name in names:
-        proc = Process(target=parser, args=(name,))
-        procs.append(proc)
-        proc.start()
+    dir = 'E:/sensor_xml_data_20170515.tar/sensor_xml_data_20170515/'
 
-    for proc in procs:
-        proc.join()
+    for name in names:
+        parser(dir, name)
