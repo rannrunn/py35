@@ -37,9 +37,9 @@ def insert_execute(values_list):
 def main():
 
     # XML 주요 키 세 가지와 그의 서브 키
-    key_m2m = ["con","ri","pi","current","shock","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc"]
+    key_m2m = ["con","ri","pi","current","shock"]
     key_con = ["accero","temp","humi","ambient","uv","press","battery","period","current","shock","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc"]
-    key_accero = ["pitch","roll","current","shock","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc"]
+    key_accero = ["pitch","roll","current","shock"]
 
     cnt = 0
     file_first = "C:/_data/data/sensor_"
