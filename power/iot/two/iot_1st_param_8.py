@@ -6,7 +6,7 @@ import os
 
 variable_all = ['TIME_ID', 'AMBIENT', 'BATTERY', 'HUMI', 'TEMP', 'PITCH', 'ROLL', 'UV', 'PRESS']
 variable_plot = ['AMBIENT', 'BATTERY', 'HUMI', 'TEMP', 'PITCH', 'ROLL', 'UV', 'PRESS']
-limit_data = {'AMBIENT':[0, 81900],'BATTERY':[0, 100],'HUMI':[0, 100],'TEMP':[-15, 65],'PITCH':[-180, 180],'ROLL':[-90, 90],'UV':[0, 20.48],'PRESS':[300, 1100]}
+limit_data = {'AMBIENT':[0, 81900],'BATTERY':[0, 100],'HUMI':[0, 100],'TEMP':[-15, 65],'PITCH':[-180, 180],'ROLL':[-90, 90],'UV':[0, 20.48],'PRESS':[0, 1100]}
 limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'TEMP':[-15, 65], 'PITCH':[-185, 185], 'ROLL':[-95, 95], 'UV':[-1, 22], 'PRESS':[-10, 1110]}
 
 def getPole(dir_data, pole_id, time_start, time_end, resample_how):
@@ -33,6 +33,15 @@ def getPole(dir_data, pole_id, time_start, time_end, resample_how):
     date_range = pd.date_range(time_start, time_end, freq=resample_how)
     pole_data = pole_data.reindex(date_range)
 
+    # plot 할 때 모든 인덱스를 출력하기 위해 맨 처음 행과 맨 마지막 행에 값 삽입
+    # 맨 처음 행과 맨 마지막 행에 값이 없을 경우에 삽입하며 ylim의 최솟값을 삽입
+    # 꼼수이기 때문에 다른 방법이 있다면 바꿔야 한다.
+    for idx in range(len(pole_data.columns)):
+        if pd.isnull(pole_data.iloc[0, idx]):
+            pole_data.iloc[0, idx] = limit_ylim[pole_data.columns[idx]][0]
+        if pd.isnull(pole_data.iloc[-1, idx]):
+            pole_data.iloc[-1, idx] = limit_ylim[pole_data.columns[idx]][0]
+
     return pole_data
 
 def saveImage(path_dir, pole_id, time_start, time_end, resample_how):
@@ -54,11 +63,6 @@ def saveImage(path_dir, pole_id, time_start, time_end, resample_how):
 
     fig = plt.figure(figsize=(20, 15))
     fig.suptitle(pole_id)
-
-    # plot 할 때 모든 인덱스를 출력하기 위해 맨 처음 행과 맨 마지막 행에 값 삽입
-    # 꼼수이기 때문에 다른 방법이 있다면 바꿔야 한다.
-    df.iloc[0, :] = 0
-    df.iloc[-1, :] = 0
 
     cnt = 0
     for item in variable_plot:
