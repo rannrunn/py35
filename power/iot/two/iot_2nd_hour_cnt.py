@@ -72,23 +72,26 @@ if __name__ == '__main__':
     path_dir = 'G:\\'
     file_name = '폴의센서별10분당데이터유무.csv'
 
-    df_pole_sensor = selectPoleSensor(cur)
-    df_left = pd.DataFrame()
-    df_right = pd.DataFrame()
+    try:
+        df_pole_sensor = selectPoleSensor(cur)
+        df_left = pd.DataFrame()
+        df_right = pd.DataFrame()
 
-    cnt = 0
-    for idx in range(len(df_pole_sensor)):
-        pole_id = df_pole_sensor['POLE_ID'][idx]
-        sensor_id = df_pole_sensor['SENSOR_ID'][idx]
-        df_right = getData(cur, pole_id, sensor_id, time_start, time_end, resample_how)
-        df_left = pd.merge(df_left, df_right, left_index=True, right_index=True, how='outer').copy()
-        cnt = cnt + 1
-        print('Count:' + str(cnt) +' / Past Time:' + str(round(time.time() - start_time_main, 4)))
+        for idx in range(len(df_pole_sensor)):
+            pole_id = df_pole_sensor['POLE_ID'][idx]
+            sensor_id = df_pole_sensor['SENSOR_ID'][idx]
+            df_right = getData(cur, pole_id, sensor_id, time_start, time_end, resample_how)
+            df_left = pd.merge(df_left, df_right, left_index=True, right_index=True, how='outer').copy()
+            cnt = idx + 1
+            print('Count:' + str(cnt) +' / Past Time:' + str(round(time.time() - start_time_main, 4)))
 
-    date_range = pd.date_range(time_start, time_end, freq=resample_how)
-    df_left.reindex(date_range)
-    df_left.to_csv(path_dir + file_name)
+        df_left.to_csv(path_dir + file_name)
 
-    print('Total Time:' + str(round(time.time() - start_time_main, 4)))
+        print('Total Time:' + str(round(time.time() - start_time_main, 4)))
 
+        con.close()
+    except Exception as e:
+        print('Exception')
+    finally:
+        con.close()
 
