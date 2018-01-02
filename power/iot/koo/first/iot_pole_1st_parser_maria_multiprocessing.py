@@ -1,5 +1,5 @@
 # 2차 파일 들을 멀티코어를 사용하여 insert 하기 위한 소스
-# sensor_xml_data_20170515 자료에 맞게 iot_2nd_parser_maria.py 소스를 수정
+# sensor_xml_data_20170515 자료에 맞게 iot_pole_2nd_parser_maria.py 소스를 수정
 # sensor_xml_data_20170515 에 들어 있는 자료의 키는 모두 5개이다
 # coding: utf-8
 import xmltodict
