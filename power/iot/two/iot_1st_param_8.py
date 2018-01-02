@@ -12,8 +12,8 @@ limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'T
 def getPole(dir_data, pole_id, time_start, time_end, resample_how):
     data = pd.read_csv(dir_data + pole_id + '.csv')
 
-    # 1. 깊은복사를 해야 경고 메시지가 뜨지 않는다.
-    # 2. 깊은복사를 하면 데이터 처리 속도가 빨라진다.
+    # 1. 얕은복사를 해야 경고 메시지가 뜨지 않는다.
+    # 2. 얕은복사를 하면 데이터 처리 속도가 빨라진다.
     pole_data = data[variable_all].copy()
     # inplace True => 제자리에서 변경(새로운 DataFrame을 생성하지 않음)
     pole_data.set_index('TIME_ID', inplace=True)

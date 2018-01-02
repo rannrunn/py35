@@ -35,8 +35,8 @@ def selectData(cur, pole_id, sensor_id, part_name, time_start, time_end):
 def getData(cur, pole_id, sensor_id, part_name, time_start, time_end, resample_how):
     df_sel = selectData(cur, pole_id, sensor_id, part_name, time_start, time_end)
 
-    # 1. 깊은복사를 해야 경고 메시지가 뜨지 않는다.
-    # 2. 깊은복사를 하면 데이터 처리 속도가 빨라진다.
+    # 1. 얕은복사를 해야 경고 메시지가 뜨지 않는다.
+    # 2. 얕은복사를 하면 데이터 처리 속도가 빨라진다.
     df_pole = df_sel[['TIME_ID','TEMP']].copy()
     # inplace True => 제자리에서 변경(새로운 DataFrame을 생성하지 않음)
     df_pole.set_index('TIME_ID', inplace=True)
