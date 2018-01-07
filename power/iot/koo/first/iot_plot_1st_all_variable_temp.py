@@ -15,7 +15,7 @@ rc('font', family=font_name)
 # SELECT 하는 방법
 def select(cur, pole_id, time_start, time_end):
     query = """SELECT DATE_FORMAT(CONCAT(CONVERT(COLUMN_MINUTE, CHAR(16)), '00'), '%%Y-%%m-%%d %%H:%%i:%%s') AS COLUMN_MINUTE,POLE_ID,BB_AVG_TEMP,BG_AVG_TEMP,WG_AVG_TEMP,JJ_AVG_TEMP,TH_AVG_TEMP 
-                FROM TB_IOT_POLE_MINUTE_AVG_TEMP 
+                FROM TB_IOT_POLE_FIRST
                 WHERE POLE_ID = '%s' AND COLUMN_MINUTE BETWEEN '%s' AND '%s'  
                 ORDER BY COLUMN_MINUTE""" % (pole_id, time_start, time_end)
     cur.execute(query);
