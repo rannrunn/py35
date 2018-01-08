@@ -120,12 +120,8 @@ def main(path_dir, resample_how):
         part_name = df_pole_part['PART_NAME'][idx]
 
         if not os.path.exists('{}{}.csv'.format(dir_data, pole_id)):
-            print('pass pole_id:{}'.format(pole_id))
-            file_log = '{}file_log.txt'.format(dir_data)
-            if not os.path.exists(file_log):
-                os.mkdir(file_log)
-
-            with open('{}새파일.txt'.format(dir_data), 'w') as f:
+            with open('{}file_log.txt'.format(dir_data), 'w') as f:
+                print('pass pole_id:{}'.format(pole_id))
                 data = 'pass pole_id:{}'.format(pole_id)
                 f.write(data)
             continue

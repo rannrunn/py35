@@ -11,7 +11,6 @@ from multiprocessing import Pool
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
 
-
 # DB connection
 con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
 con.set_character_set('utf8')
@@ -23,7 +22,7 @@ cur.execute('SET character_set_connection=utf8;')
 path_dir = 'F:\\IOT\\'
 
 # SELECT
-def selectPoleSensor(cur, pole_id):
+def selectPoleSensor(pole_id):
     query = """SELECT *
                 FROM TB_IOT_POLE_SECOND
                 WHERE POLE_ID = '%s'
@@ -34,7 +33,7 @@ def selectPoleSensor(cur, pole_id):
     return df
 
 def saveData(df_pole_info, pole_id):
-    df = selectPoleSensor(cur, pole_id)
+    df = selectPoleSensor(pole_id)
     df = df.merge(df_pole_info, on='SENSOR_ID', how='left')
     df = df[['FILE_NAME','TIME_ID','AREA','POLE_ID_x','SENSOR_ID','PART_NAME','RI','PI','TEMP','HUMI','PITCH','ROLL','AMBIENT','UV','PRESS','BATTERY','PERIOD','CURRENT','SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z','USN','NTC','UVC']]
     df.columns = ['FILE_NAME','TIME_ID','AREA','POLE_ID','SENSOR_ID','PART_NAME','RI','PI','TEMP','HUMI','PITCH','ROLL','AMBIENT','UV','PRESS','BATTERY','PERIOD','CURRENT','SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z','USN','NTC','UVC']
