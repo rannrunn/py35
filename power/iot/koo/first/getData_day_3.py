@@ -10,7 +10,7 @@ plt.rc('font', family='HYsanB')
 
 
 def getDataDay(pole_id, sensor_id, time_id):
-    os.chdir('G:/pole_id_data_all')
+    os.chdir('D:\\backup_g\\2017-11-08\\pole_id_data_all')
     data = pd.read_csv(pole_id + '.csv')
 
     data_sensor = data.loc[data['sensor_id'] == sensor_id, ['time_id', 'temp']]

@@ -5,6 +5,7 @@ import traceback
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import datetime
 from matplotlib import font_manager, rc
 from multiprocessing import Pool
 
@@ -21,7 +22,7 @@ limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'T
 def getPole(df, pole_id, sensor_id, part_name, str_time, resample_how):
 
     data_time_start = "{} {}".format(str_time, ' 00:00:00')
-    data_time_end = "{} {}".format(str_time, ' 23:50:50')
+    data_time_end = "{} {}".format(str_time, ' 23:59:00')
 
     df_day = df[variable_all]
     df_day = df_day.loc[df_day['SENSOR_ID'] == sensor_id]
@@ -44,17 +45,7 @@ def getPole(df, pole_id, sensor_id, part_name, str_time, resample_how):
     date_range = pd.date_range(data_time_start, data_time_end, freq=resample_how)
     df_day = df_day.reindex(date_range)
 
-    # plot 할 때 모든 인덱스를 출력하기 위해 맨 처음 행과 맨 마지막 행에 값 삽입
-    # 맨 처음 행과 맨 마지막 행에 값이 없을 경우에 삽입하며 ylim의 최솟값을 삽입
-    # 꼼수이기 때문에 다른 방법이 있다면 바꿔야 한다.
-    for idx in range(len(df_day.columns)):
-        if pd.isnull(df_day.iloc[0, idx]):
-            df_day.iloc[0, idx] = limit_ylim[df_day.columns[idx]][0]
-        if pd.isnull(df_day.iloc[-1, idx]):
-            df_day.iloc[-1, idx] = limit_ylim[df_day.columns[idx]][0]
-
     return df_day
-
 
 def saveImage(df, dir_data, dir_output, pole_id, sensor_id, part_name, str_time, resample_how):
 
@@ -62,15 +53,19 @@ def saveImage(df, dir_data, dir_output, pole_id, sensor_id, part_name, str_time,
 
     file_name = '{}_{}_{}_{}'.format(pole_id ,sensor_id ,part_name ,str_time)
     df_day = getPole(df, pole_id, sensor_id, part_name, str_time, resample_how)
-
+    df_day = df_day.interpolate()
     fig = plt.figure(figsize=(20, 15))
     fig.suptitle(file_name)
+
+    index_start = str(df_day.index.values[0])
+    index_end = str(df_day.index.values[-1])
 
     cnt = 0
     for item in variable_plot:
         cnt = cnt + 1
         exec('ax{} = fig.add_subplot({}, 1, {})'.format(str(cnt), str(len(variable_plot)), str(cnt)))
         eval('ax{}.plot(df_day[\'{}\'])'.format(str(cnt), item))
+        eval('ax{}.set_xlim([datetime.datetime({}, {}, {}, {}, {}, {}), datetime.datetime({}, {}, {}, {}, {}, {})])'.format(str(cnt), int(index_start[:4]), int(index_start[5:7]), int(index_start[8:10]), int(index_start[11:13]), int(index_start[14:16]), int(index_start[17:19]), int(index_end[:4]), int(index_end[5:7]), int(index_end[8:10]), int(index_end[11:13]), int(index_end[14:16]), int(index_end[17:19])))
         eval('ax{}.set_ylabel(\'{}\')'.format(str(cnt), item))
         eval('ax{}.set_ylim({})'.format(str(cnt), str(limit_ylim[item])))
 
@@ -94,10 +89,10 @@ def sumDay(df):
 def wrapper_saveImage(args):
     return saveImage(*args)
 
-def main(path_dir, resample_how):
+def main(path_dir, order, resample_how):
 
     # 데이터 디렉토리 체크
-    dir_data = '{}data\\'.format(path_dir)
+    dir_data = '{}data\\{}\\'.format(path_dir, order)
     if not os.path.isdir(dir_data):
         print('데이터 디렉토리가 존재하지 않습니다.')
         return
@@ -108,17 +103,17 @@ def main(path_dir, resample_how):
         os.mkdir(dir_output)
 
     df_pole_30 = pd.read_csv('{}iot_pole_2nd_30.csv'.format(path_dir), encoding = "euc-kr")
-    df_pole_info = pd.read_csv('{}iot_pole_info.csv'.format(path_dir), encoding = "euc-kr")
-
-    df_pole_info = df_pole_info[df_pole_info['PART_NAME'] != '']
-    df_pole_info = df_pole_info[df_pole_info['PART_NAME'].notnull()]
+    df_pole_info = pd.read_csv('{}iot_pole_2nd_info.csv'.format(path_dir), encoding = "euc-kr")
+    ser_unique = df_pole_info[~df_pole_info['POLE_ID'].isin(df_pole_info[df_pole_info['PART_NAME'].isnull()]['POLE_ID'])]['POLE_ID'].unique()
+    df_pole_info = df_pole_info[df_pole_info['POLE_ID'].isin(ser_unique)]
+    df_pole_info = df_pole_info[df_pole_info['POLE_ID'].isin(df_pole_30['POLE_ID'])]
 
     df_10minute = pd.read_csv('{}2차폴의센서별10분당데이터유무.csv'.format(path_dir), encoding = "euc-kr")
     df_10minute = sumDay(df_10minute)
-    df_pole_info = df_pole_info.loc[df_pole_info['POLE_ID'].isin(df_pole_30['POLE_ID'].values)]
 
 
     for idx in df_pole_info.index.values:
+
         pole_id = df_pole_info['POLE_ID'][idx]
         sensor_id = df_pole_info['SENSOR_ID'][idx]
         part_name = df_pole_info['PART_NAME'][idx]
@@ -134,14 +129,14 @@ def main(path_dir, resample_how):
                 f.write(data)
             continue
 
-        df_pole = pd.read_csv('{}{}.csv'.format(dir_data, pole_id))
+        df_pole = pd.read_csv('{}{}.csv'.format(dir_data, pole_id), encoding = "euc-kr")
 
-        df_10minute = df_10minute.loc[df_10minute['{}_{}_{}'.format(pole_id , sensor_id , part_name)] == 144, '{}_{}_{}'.format(pole_id , sensor_id , part_name)]
+        df_10minute_one_pole = df_10minute.loc[df_10minute['{}_{}'.format(pole_id , sensor_id)] == 144, '{}_{}'.format(pole_id , sensor_id)]
 
-        cnt = 0
+
         list_pole = []
-        for item in df_10minute.index.values:
-            cnt = cnt + 1
+        for item in df_10minute_one_pole.index.values:
+
             list_param = []
 
             list_param.append(df_pole)
@@ -164,12 +159,13 @@ if __name__ == '__main__':
 
     start_time_main = time.time()
 
+    order = '2nd'
     path_dir = 'F:\\IOT\\'
-    time_start = '2016-05-01 00:00:00'
+    time_start = '2017-05-01 00:00:00'
     time_end = '2017-12-31 23:59:59'
     resample_how = '1T'
 
-    main(path_dir, resample_how)
+    main(path_dir, order, resample_how)
 
     print('Total Time:{}'.format(str(round(time.time() - start_time_main, 4))))
 

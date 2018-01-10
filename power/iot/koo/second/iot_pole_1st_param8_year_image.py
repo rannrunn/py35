@@ -68,7 +68,7 @@ def saveImage(path_dir, pole_id, time_start, time_end, resample_how):
     for item in variable_plot:
         cnt = cnt + 1
         exec('ax' + str(cnt) + ' = fig.add_subplot(' + str(len(variable_plot)) + ', 1, ' + str(cnt) + ')')
-        eval('ax' + str(cnt) + '.bar(df.index.values, df[\'' + item + '\'], width=1)')
+        eval('ax' + str(cnt) + '.plot(df[\'' + item + '\'])')
         eval('ax' + str(cnt) + '.set_ylabel(\'' + item + '\')')
         eval('ax' + str(cnt) + '.set_ylim(' + str(limit_ylim[item]) + ')')
 
