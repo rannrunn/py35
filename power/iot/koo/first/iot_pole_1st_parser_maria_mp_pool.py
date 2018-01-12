@@ -2,32 +2,42 @@
 # sensor_xml_data_20170515 자료에 맞게 iot_pole_2nd_parser_maria.py 소스를 수정
 # sensor_xml_data_20170515 에 들어 있는 자료의 키는 모두 5개이다
 # coding: utf-8
-import xmltodict
 import json
-import datetime
-import os.path
-import MySQLdb
-import time
-import traceback
-import threading
-import logging
 import os
-from multiprocessing import Process
+import os.path
+import time
+from multiprocessing import Pool
+
+import MySQLdb
+import xmltodict
+import copy
+
+# XML 주요 키 세 가지와 그의 서브 키
+key_m2m = ["con","ri","pi"]
+key_con = ["accero","temp","humi","pitch","roll","ambient","uv","press","battery","period","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc","current","shock"]
+key_accero = ["pitch","roll","current","shock"]
+
+# dictionary 초기화
+dict_initial = {'file_name':None,'time_id':None,'sensor_id':None,'pole_id':None,'part_name':None,'ri':None,'pi':None,'temp':None,'humi':None,'pitch':None,'roll':None,'ambient':None,'uv':None,'press':None,'battery':None,'period':None,'current':None,'shock':None,'geomag_x':None,'geomag_y':None,'geomag_z':None,'var_x':None,'var_y':None,'var_z':None,'usn':None,'ntc':None,'uvc':None}
+list_dict_key = ['file_name','time_id','sensor_id','pole_id','part_name','ri','pi','temp','humi','pitch','roll','ambient','uv','press','battery','period','current','shock','geomag_x','geomag_y','geomag_z','var_x','var_y','var_z','usn','ntc','uvc']
+columns = ','.join(list_dict_key)
+
+# 테이블명
+table = 'TB_IOT_POLE_FIRST'
+query_insert = "insert into " + table + "(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+
 
 # DB 에 여러개 데이터를 한번에 인서트 하기 위한 list 생성
 def make_values_list(values_list, dict):
-    values_list.append(tuple(dict.values()))
+    values_list.append(tuple([dict[item] for item in list_dict_key]))
     return values_list
 
 # 한번에 insert
 def insert_execute(con, cur, query_insert, values_list):
     cur.executemany(query_insert, values_list)
     con.commit()
-    # 인서트 마쳤으니 초기화
-    values_list = []
-    return values_list
 
-def parser(name):
+def parser(file_name):
 
     # MariaDB connection
     con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
@@ -39,31 +49,16 @@ def parser(name):
 
     start = time.time()
 
-    # XML 주요 키 세 가지와 그의 서브 키
-    key_m2m = ["con","ri","pi"]
-    key_con = ["accero","temp","humi","pitch","roll","ambient","uv","press","battery","period","geomag_x","geomag_y","geomag_z","var_x","var_y","var_z","usn","ntc","uvc","current","shock"]
-    key_accero = ["pitch","roll","current","shock"]
+    if not os.path.exists(file_name):
+        return
+
+    # dictionary에 파일명 추가
+    dict_initial['file_name'] = os.path.basename(file_name)
+
 
     cnt = 0
     cnt_batch = 10000
     values_list = []
-
-    # dictionary 초기화
-    dict_initial = {'file_name':'','time_id':'','sensor_id':'','pole_id':'','part_name':'','ri':'','pi':'','temp':'','humi':'','pitch':'','roll':'','ambient':'','uv':'','press':'','battery':'','period':'','current':'','shock':'','geomag_x':'','geomag_y':'','geomag_z':'','var_x':'','var_y':'','var_z':'','usn':'','ntc':'','uvc':''}
-    columns = ','.join(dict_initial.keys())
-
-    # 파일명을 변경해 가면서 인서트
-    file_name = 'D:/010_data/kepco/iot_pole/2nd/'+ name
-
-    if not os.path.exists(file_name):
-        return
-
-    # 테이블명
-    table = 'tb_iot_pole_' + name[13:19]
-    query_insert = "insert into " + table + "(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-
-    # dictionary에 파일명 추가
-    dict_initial['file_name'] = os.path.basename(file_name)
 
     f = open(file_name, 'rt', encoding='UTF8')
     #print(file_name)
@@ -71,13 +66,11 @@ def parser(name):
 
         line = f.readline()
         if not line:
-            # 마지막 라인일 경우에 아직 INSERT 되지 않는 데이터에 대해 INSERT
-            if cnt % cnt_batch != 0:
-                values_list = insert_execute(con, cur, query_insert, values_list)
-                print("file_name:", file_name, " , cnt:", cnt, " , past_time:", (time.time() - start))
             break
 
-        dict = dict_initial
+        cnt += 1
+
+        dict = copy.deepcopy(dict_initial)
 
         bool_con = False
         bool_accero = False
@@ -110,7 +103,6 @@ def parser(name):
                     dict[key] = json_all["m2m:cin"][key]
 
         #print(json_all["m2m:cin"]["con"])
-        json_con = {}
         if bool(json_all["m2m:cin"]["con"]):
             json_con = json.loads(json_all["m2m:cin"]["con"].replace("\"\"temp\"","\",\"temp\""))
 
@@ -134,10 +126,16 @@ def parser(name):
         values_list = make_values_list(values_list, dict)
 
         # cnt_batch의 개수에 도달했을 때 한꺼번에 insert
-        cnt = cnt + 1
+
         if cnt % cnt_batch == 0:
-            values_list = insert_execute(con, cur, query_insert, values_list)
+            insert_execute(con, cur, query_insert, values_list)
+            values_list = []
             print("file_name:", file_name, " , cnt:", cnt, " , past_time:", (time.time() - start))
+
+    # 마지막 라인일 경우에 아직 INSERT 되지 않는 데이터에 대해 INSERT
+    if cnt % cnt_batch != 0:
+        insert_execute(con, cur, query_insert, values_list)
+        print("file_name:", file_name, " , cnt:", cnt, " , Total Time:", (time.time() - start))
 
     f.close()
     con.close()
@@ -145,24 +143,11 @@ def parser(name):
 
 if __name__ == '__main__':
 
-    # names = ['t_SENSOR_XML_201604_test.dat']
-    # insert할 파일의 리스트
-    names = ['t_SENSOR_XML_201604_2274787.dat'
-        ,'t_SENSOR_XML_201605_1895870.dat'
-        ,'t_SENSOR_XML_201606_1371773.dat'
-        ,'t_SENSOR_XML_201607_4064409.dat'
-        ,'t_SENSOR_XML_201608_8218811.dat'
-        ,'t_SENSOR_XML_201609_7187682.dat'
-        ,'t_SENSOR_XML_201610_6699561.dat'
-        ,'t_SENSOR_XML_201611_5084265.dat'
-        ,'t_SENSOR_XML_201612_20170515_30571302.txt']
+    path = "D:/010_data/kepco/iot_pole/1st"
+    list_file = []
+    for path, dir, filenames in os.walk(path):
+        for item in filenames:
+            list_file.append('/'.join([path, item]))
 
-    # 멀티스로세싱
-    procs = []
-    for name in names:
-        proc = Process(target=parser, args=(name,))
-        procs.append(proc)
-        proc.start()
-
-    for proc in procs:
-        proc.join()
+    with Pool(processes=5) as pool:
+        pool.map(parser, list_file)

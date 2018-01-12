@@ -53,9 +53,6 @@ def saveImage(df, dir_data, dir_output, pole_id, sensor_id, part_name, str_time,
 
     file_name = '{}_{}_{}_{}'.format(pole_id ,sensor_id ,part_name ,str_time)
     df_day = getPole(df, pole_id, sensor_id, part_name, str_time, resample_how)
-
-    file_name = '{}_{}_{}_{}'.format(pole_id ,sensor_id ,part_name ,str_time)
-    df_day = getPole(df, pole_id, sensor_id, part_name, str_time, resample_how)
     df_day = df_day.interpolate()
     fig = plt.figure(figsize=(20, 15))
     fig.suptitle(file_name)
