@@ -9,7 +9,7 @@ variable_plot = ['AMBIENT', 'BATTERY', 'HUMI', 'TEMP', 'PITCH', 'ROLL', 'UV', 'P
 limit_data = {'AMBIENT':[0, 81900],'BATTERY':[0, 100],'HUMI':[0, 100],'TEMP':[-15, 65],'PITCH':[-180, 180],'ROLL':[-90, 90],'UV':[0, 20.48],'PRESS':[0, 1100]}
 limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'TEMP':[-15, 65], 'PITCH':[-185, 185], 'ROLL':[-95, 95], 'UV':[-1, 22], 'PRESS':[-10, 1110]}
 
-def getPole(dir_data, pole_id, time_start, time_end, resample_how):
+def getPoleData(dir_data, pole_id, time_start, time_end, resample_how):
     data = pd.read_csv(dir_data + pole_id + '.csv')
 
     # 1. 얕은복사를 해야 경고 메시지가 뜨지 않는다.
@@ -59,7 +59,7 @@ def saveImage(path_dir, pole_id, time_start, time_end, resample_how):
         os.mkdir(dir_output)
 
     # 전주의 데이터를 가져온다.
-    df = getPole(dir_data, pole_id, time_start, time_end, resample_how)
+    df = getPoleData(dir_data, pole_id, time_start, time_end, resample_how)
 
     fig = plt.figure(figsize=(20, 15))
     fig.suptitle(pole_id)

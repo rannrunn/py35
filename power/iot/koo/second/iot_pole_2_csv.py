@@ -35,8 +35,8 @@ def selectPoleSensor(pole_id):
 def saveData(df_pole_info, pole_id):
     df = selectPoleSensor(pole_id)
     df = df.merge(df_pole_info, on='SENSOR_ID', how='left')
-    df = df[['FILE_NAME','TIME_ID','AREA','POLE_ID_x','SENSOR_ID','PART_NAME','RI','PI','TEMP','HUMI','PITCH','ROLL','AMBIENT','UV','PRESS','BATTERY','PERIOD','CURRENT','SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z','USN','NTC','UVC']]
-    df.columns = ['FILE_NAME','TIME_ID','AREA','POLE_ID','SENSOR_ID','PART_NAME','RI','PI','TEMP','HUMI','PITCH','ROLL','AMBIENT','UV','PRESS','BATTERY','PERIOD','CURRENT','SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z','USN','NTC','UVC']
+    df = df[['FILE_NAME','TIME_ID','POLE_ID_x','SENSOR_ID','PART_NAME','RI','PI','TEMP','HUMI','PITCH','ROLL','AMBIENT','UV','PRESS','BATTERY','PERIOD','CURRENT','SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z','USN','NTC','UVC']]
+    df.columns = ['FILE_NAME','TIME_ID','POLE_ID','SENSOR_ID','PART_NAME','RI','PI','TEMP','HUMI','PITCH','ROLL','AMBIENT','UV','PRESS','BATTERY','PERIOD','CURRENT','SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z','USN','NTC','UVC']
     df.to_csv('{}output\\{}.csv'.format(path_dir, pole_id))
 
 def wrapper(args):
@@ -51,8 +51,9 @@ def main(path_dir):
         print('아웃풋 디렉토리를 생성하였습니다.')
 
     df_pole_info = pd.read_csv('{}iot_pole_2nd_info.csv'.format(path_dir), encoding = "euc-kr")
-    df_unique = df_pole_info[~df_pole_info['POLE_ID'].isin(df_pole_info[df_pole_info['PART_NAME'].isnull()]['POLE_ID'])]['POLE_ID'].unique()
-
+    print(df_pole_info['POLE_ID'].isin(df_pole_info[df_pole_info['PART_NAME'].isnull()]['POLE_ID']))
+    df_unique = df_pole_info[~df_pole_info['POLE_ID'].isin(df_pole_info[df_pole_info['POLE_ID'].isnull()]['POLE_ID'])]['POLE_ID'].unique()
+    print(df_unique)
     list = []
     for pole_id in df_unique:
         list_param = []
@@ -60,7 +61,7 @@ def main(path_dir):
         list_param.append(pole_id)
         list.append(list_param)
 
-    with Pool(processes=8) as pool:
+    with Pool(processes=6) as pool:
         pool.map(wrapper, list)
 
 

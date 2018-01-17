@@ -50,7 +50,7 @@ def main(path_dir):
         print('아웃풋 디렉토리를 생성하였습니다.')
 
     df_pole_info = pd.read_csv('{}iot_pole_1st_info.csv'.format(path_dir), encoding = "euc-kr")
-    df_unique = df_pole_info[~df_pole_info['POLE_ID'].isin(df_pole_info[df_pole_info['PART_NAME'].isnull()]['POLE_ID'])]['POLE_ID'].unique()
+    df_unique = df_pole_info[~df_pole_info['POLE_ID'].isin(df_pole_info[df_pole_info['POLE_ID'].isnull()]['POLE_ID'])]['POLE_ID'].unique()
 
     list = []
     for pole_id in df_unique:

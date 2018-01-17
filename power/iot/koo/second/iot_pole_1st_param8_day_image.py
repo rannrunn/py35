@@ -18,7 +18,7 @@ limit_data = {'AMBIENT':[0, 81900],'BATTERY':[0, 100],'HUMI':[0, 100],'TEMP':[-1
 limit_ylim = {'AMBIENT':[-100, 82000], 'BATTERY':[-5, 105], 'HUMI':[-5, 105], 'TEMP':[-15, 65], 'PITCH':[-185, 185], 'ROLL':[-95, 95], 'UV':[-1, 22], 'PRESS':[-10, 1110]}
 
 
-def getPole(df, pole_id, sensor_id, part_name, str_time, resample_how):
+def getSensorData(df, pole_id, sensor_id, part_name, str_time, resample_how):
 
     data_time_start = "{} {}".format(str_time, ' 00:00:00')
     data_time_end = "{} {}".format(str_time, ' 23:50:50')
@@ -52,7 +52,7 @@ def saveImage(df, dir_data, dir_output, pole_id, sensor_id, part_name, str_time,
     start_time = time.time()
 
     file_name = '{}_{}_{}_{}'.format(pole_id ,sensor_id ,part_name ,str_time)
-    df_day = getPole(df, pole_id, sensor_id, part_name, str_time, resample_how)
+    df_day = getSensorData(df, pole_id, sensor_id, part_name, str_time, resample_how)
     df_day = df_day.interpolate()
     fig = plt.figure(figsize=(20, 15))
     fig.suptitle(file_name)

@@ -1,18 +1,43 @@
-s1 = 'hello'
-s2 = 'hello,'
-s3 = 'hello'
-print(id(s1), id(s2), id(s3))
-
-print(s1 == s2)
-
-print(s1 is s2)
+# https://machinelearningmastery.com/make-sample-forecasts-arima-python/
 
 
+from pandas import Series
+from statsmodels.tsa.arima_model import ARIMA
+import numpy
+import matplotlib.pyplot as plt
 
-s3 = 'hello, world!'
-s4 = 'hello, world!'
-print(id(s3), id(s4))
+# create a differenced series
+def difference(dataset, interval=1):
+    diff = list()
+    for i in range(interval, len(dataset)):
+        value = dataset[i] - dataset[i - interval]
+        diff.append(value)
+    return numpy.array(diff)
 
-print(s3 == s4)
+# invert differenced value
+def inverse_difference(history, yhat, interval=1):
+    return yhat + history[-interval]
 
-print(s3 is s4)
+# load dataset
+series = Series.from_csv('dataset.csv', header=None)
+# seasonal difference
+X = series.values
+days_in_year = 365
+differenced = difference(X, days_in_year)
+# fit model
+model = ARIMA(differenced, order=(7,0,1))
+model_fit = model.fit(disp=0)
+# multi-step out-of-sample forecast
+forecast = model_fit.forecast(steps=100)[0]
+# invert the differenced forecast to something usable
+history = [x for x in X]
+day = 1
+for yhat in forecast:
+    inverted = inverse_difference(history, yhat, days_in_year)
+    print('Day %d: %f' % (day, inverted))
+    history.append(inverted)
+    day += 1
+
+
+plt.plot(forecast)
+plt.show()
