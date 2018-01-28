@@ -61,8 +61,8 @@ def process(variable, dir_data, dir_output, period_image, pole_id, time_start, t
         while range_start < index_end:
             df_data = df_pole[range_start:range_end]
             # 데이터가 모두 있을 경우 이미지 저장
-            if len(df_data[df_data.iloc[:, 1].notnull()]) == step_week:
-                saveImage(df_data, dir_output, period_image, pole_id, cnt_data)
+            # if len(df_data[df_data.iloc[:, 1].notnull()]) == step_week:
+            saveImage(df_data, dir_output, period_image, pole_id, cnt_data)
             range_start += datetime.timedelta(days=7)
             range_end += datetime.timedelta(days=7)
     # 일별 데이터
@@ -72,8 +72,8 @@ def process(variable, dir_data, dir_output, period_image, pole_id, time_start, t
         while range_start < index_end:
             df_data = df_pole[range_start:range_end]
             # 데이터가 모두 있을 경우 이미지 저장
-            if len(df_data[df_data.iloc[:, 1].notnull()]) == step_day:
-                saveImage(df_data, dir_output, period_image, pole_id, cnt_data)
+            # if len(df_data[df_data.iloc[:, 1].notnull()]) == step_day:
+            saveImage(df_data, dir_output, period_image, pole_id, cnt_data)
             range_start += datetime.timedelta(days=1)
             range_end += datetime.timedelta(days=1)
 
@@ -170,6 +170,7 @@ def saveImage(df, dir_output, period_image, pole_id, cnt_data):
     ax1.plot(df)
     ax1.set_xlim([datetime.datetime(index_start.year, index_start.month, index_start.day, index_start.hour, index_start.minute, index_start.second), datetime.datetime(index_end.year, index_end.month, index_end.day, index_end.hour, index_end.minute, index_end.second)])
     ax1.set_ylim(limit_ylim['TEMP'])
+    plt.grid(True)
 
 
     print('CNT:{}, {}'.format(cnt_data, file_name))
@@ -187,7 +188,7 @@ def saveImage(df, dir_output, period_image, pole_id, cnt_data):
 def wrapper_process(args):
     return process(*args)
 
-def main(pole_top, variable, path_dir, period, period_image, time_start, time_end, resample_how):
+def main(sel_pole_id, pole_top, variable, path_dir, period, period_image, time_start, time_end, resample_how):
 
     # 데이터 디렉토리 체크
     dir_data = '{}data\\{}\\'.format(path_dir, period)
@@ -229,6 +230,9 @@ def main(pole_top, variable, path_dir, period, period_image, time_start, time_en
     df_pole_list = df_pole_list[df_pole_list['POLE_ID'].isin(sr_pole_ts)]
     df_pole_list = df_pole_list[df_pole_list['POLE_ID'].isin(sr_pole_ps)]
 
+    if sel_pole_id != '':
+        df_pole_list = df_pole_list[df_pole_list['POLE_ID'] == sel_pole_id]
+
     cnt = 0
     list_pole = []
     for idx in df_pole_list.index.values:
@@ -268,7 +272,7 @@ if __name__ == '__main__':
     # 'TEMP', 'HUMI', 'PITCH', 'ROLL', 'AMBIENT', 'UV', 'PRESS', 'BATTERY', 'SHOCK', 'USN', 'NTC', 'UVC'
     pole_top = 50 # plot하려는 전주의 개수(최대는 50까지, 0일 경우에는 모두)
     variable = 'TEMP'
-    period = '1'
+    period = '2'
     period_image = 'w' # all, month, week, day 의 이니셜
     path_dir = 'F:\\IOT\\'
     if period == '1':
@@ -280,9 +284,11 @@ if __name__ == '__main__':
 
     resample_how = '10T'
 
+    sel_pole_id = '8232P471'
+
     print(variable)
 
-    main(pole_top, variable, path_dir, period, period_image, time_start, time_end, resample_how)
+    main(sel_pole_id, pole_top, variable, path_dir, period, period_image, time_start, time_end, resample_how)
 
     print('Total Time:{}'.format(str(round(time.time() - start_time_main, 4))))
 

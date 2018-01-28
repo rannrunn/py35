@@ -242,7 +242,7 @@ def main(pole_top, variable, path_dir, period, period_image, time_start, time_en
 
     print('List Length:{}'.format(cnt))
 
-    with Pool(processes=5) as pool:
+    with Pool(processes=25) as pool:
         pool.map(wrapper_process, list_pole)
 
 
@@ -255,8 +255,8 @@ if __name__ == '__main__':
     pole_top = 50 # plot하려는 전주의 개수(최대는 50까지, 0일 경우에는 모두)
     variable = 'TEMP'
     period = '2'
-    period_image = 'w' # all, month, week, day 의 이니셜
-    path_dir = 'F:\\IOT\\'
+    period_image = 'd' # all, month, week, day 의 이니셜
+    path_dir = 'D:\\IOT\\'
     if period == '1':
         time_start = '2016-04-01 00:00:00'
         time_end = '2017-05-31 23:59:59'

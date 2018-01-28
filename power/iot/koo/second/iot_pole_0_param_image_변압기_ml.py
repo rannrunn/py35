@@ -173,7 +173,7 @@ def saveImage(df, dir_output, period_image, pole_id, cnt_data):
     ax1.set_xlim([datetime.datetime(index_start.year, index_start.month, index_start.day, index_start.hour, index_start.minute, index_start.second), datetime.datetime(index_end.year, index_end.month, index_end.day, index_end.hour, index_end.minute, index_end.second)])
     ax1.set_ylim(limit_ylim['TEMP'])
 
-    fig.show()
+    plt.figure.show()
 
 
     try:
