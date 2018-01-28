@@ -173,7 +173,7 @@ def saveImage(df, dir_output, period_image, pole_id, cnt_data):
     ax1.set_xlim([datetime.datetime(index_start.year, index_start.month, index_start.day, index_start.hour, index_start.minute, index_start.second), datetime.datetime(index_end.year, index_end.month, index_end.day, index_end.hour, index_end.minute, index_end.second)])
     ax1.set_ylim(limit_ylim['TEMP'])
 
-    plt.figure.show()
+    fig.show()
 
 
     try:
@@ -347,7 +347,7 @@ if __name__ == '__main__':
     variable = 'TEMP'
     period = '2'
     period_image = 'd' # all, month, week, day 의 이니셜
-    path_dir = 'F:\\IOT\\'
+    path_dir = 'G:\\IOT\\'
     if period == '1':
         time_start = '2016-04-01 00:00:00'
         time_end = '2017-05-31 23:59:59'
