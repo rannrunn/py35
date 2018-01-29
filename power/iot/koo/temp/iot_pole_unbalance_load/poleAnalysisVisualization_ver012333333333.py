@@ -157,9 +157,11 @@ class ObjectControlClass(QtWidgets.QDialog):
             # print(drawWidget.caseCount)
             if selectedRowNum > 2:
                 return
-
+            print('ddd')
             tmpClassObj = tmpClass()
+            print('dddddd')
             tmpClassObj.calcPoleUnbalance(int(selectedRowNum), ObjectControlClass.tableIndexOfPoleObject.values())
+            print('dddddddd')
 
     def insertDisplayModeValueIntoTable(self):
         print('DIc Value : ', ObjectControlClass.displayModeValue['Total'])
@@ -421,11 +423,11 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
 
         return -1
 
-
+unbalanceLoadModule = uli.PoleInfo()
 class tmpClass:
     def __init__(self):
         print('머신시작')
-        self.unbalanceLoadModule = uli.PoleInfo()
+
         print('이건 매니저님이 만드실 함수를 담을 깡통 클래스입니다!')
 
     def calcPoleUnbalance(self, mode, poles):
@@ -448,7 +450,7 @@ class tmpClass:
                 # poleObject.setUnbalanceInfo(resultUnbalanceInfo)
                 # returnDic[poleItem] = {'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
                 print('효1')
-                unbalanceCount, unbalanceClass = self.unbalanceLoadModule.getMonthlyInfo(poleItem, time_start, time_end)
+                unbalanceCount, unbalanceClass = unbalanceLoadModule.getMonthlyInfo(poleItem, time_start, time_end)
                 returnClass = ''
                 if unbalanceClass == 0:
                     returnClass = 'Normal'
@@ -474,7 +476,7 @@ class tmpClass:
                 resultUnbalanceInfo = self.calcUnbalanceInfo(idx)
                 # poleObject.setUnbalanceInfo(resultUnbalanceInfo)
                 # returnDic[poleItem] = {'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
-                unbalanceCount = self.unbalanceLoadModule.getDailyInfo(poleItem, time_start, time_end)
+                unbalanceCount = unbalanceLoadModule.getDailyInfo(poleItem, time_start, time_end)
                 unbalanceClass = 0
                 returnClass = ''
                 if unbalanceClass == 0:
