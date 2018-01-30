@@ -1,16 +1,22 @@
+import datetime
+import random
 import sys
-from PyQt5 import QtWidgets
-from PyQt5 import QtGui
-from PyQt5.QtGui import QPainter, QColor, QPen, QBrush
-from PyQt5.QtCore import *
-from PyQt5 import uic
-from PyQt5.QtWidgets import QBoxLayout
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QPushButton
+import time
 
+import MySQLdb
+import numpy as np
+import pandas as pd
+from PyQt5 import QtGui
+from PyQt5 import QtWidgets
+from PyQt5 import uic
+from PyQt5.QtCore import *
+from PyQt5.QtGui import QColor, QPen
+from PyQt5.QtWidgets import QSizePolicy
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-import random
+import dbConnection
+# import unbalanceLoadInfo as uli
 
 
 # GraphicsScene Event용 class
@@ -209,8 +215,42 @@ class ObjectControlClass(QtWidgets.QDialog):
             if selectedRowNum > 2:
                 return
 
-            ObjectControlClass.selectDisplayMode = selectedRowNum
-            ObjectControlClass.tmpClassObj.calcPoleUnbalance(int(selectedRowNum), ObjectControlClass.tableIndexOfPoleObject.values())
+            self.chgUnbalanceCircleInfo(selectedRowNum)
+        else:
+            print('Not Selected')
+
+    def chgUnbalanceCircleInfo(self, selectedRowNum):
+        ObjectControlClass.selectDisplayMode = selectedRowNum
+        resultCircleInfoDic = ObjectControlClass.tmpClassObj.calcPoleUnbalance(int(selectedRowNum), ObjectControlClass.tableIndexOfPoleObject.values())
+
+        # returnDic[poleItem] = {'poleId': poleItem, 'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
+
+        print('resultCircleInfoDic length', len(resultCircleInfoDic))
+
+        for poleItem in ObjectControlClass.poleObjectDic.keys():
+            poleUnbalanceData = resultCircleInfoDic[poleItem]
+            unbalanceClass = poleUnbalanceData['unbalanceClass']
+            unbalanceInfo = poleUnbalanceData['unbalanceInfo']
+
+            poleObject = ObjectControlClass.poleObjectDic[poleItem]
+
+            poleObject.setUnbalanceClass(unbalanceClass)
+            poleObject.setUnbalanceInfo(unbalanceInfo)
+            poleObject.drawUnbalanceStateCircle()
+
+            # for unbalanceCircleInfoItem in resultCircleInfoDic:
+            #     print(unbalanceCircleInfoItem.keys())
+            #     poleId = unbalanceCircleInfoItem['poleId']
+            #     unbalanceClass = unbalanceCircleInfoItem['unbalanceClass']
+            #     unbalanceInfo = unbalanceCircleInfoItem['unbalanceInfo']
+            #
+            #     poleObject = ObjectControlClass.poleObjectDic[poleId]
+            #
+            #     poleObject.setUnbalanceClass(unbalanceClass)
+            #     poleObject.setUnbalanceInfo(unbalanceInfo)
+            #     poleObject.drawUnbalanceStateCircle()
+
+
 
     def insertDisplayModeValueIntoTable(self):
         # print('DIc Value : ', ObjectControlClass.displayModeValue['Total'])
@@ -235,7 +275,7 @@ class ObjectControlClass(QtWidgets.QDialog):
         if ObjectControlClass.LastIndex != 0:
             self.drawLInkPoleLine()
 
-        # ObjectControlClass.diagramScene.addWidget(self.poleObject)
+            # ObjectControlClass.diagramScene.addWidget(self.poleObject)
 
     def calcStandardPoint(self):
         tmpPointX, tmpPointY = 0, 0
@@ -342,34 +382,37 @@ class ObjectControlClass(QtWidgets.QDialog):
         linkedLineObject.setPen(QPen(QColor(Qt.cyan), 2, Qt.SolidLine, Qt.FlatCap, Qt.RoundJoin))
         self.poleObject.diagramScene.addItem(linkedLineObject)
         self.poleObject.getParentPole().setLinkedChildLine(linkedLineObject, poleDirection)
-    #     setLinkedChildLine
+        #     setLinkedChildLine
 
-    #     ObjectControlClass.diagramScene
-#     self.calcLinePoint()
-#     self.centerLineObject = QLineF(self.centerX, self.centerY, self.centerX, self.centerY + PoleObject.centerLineLength)
-#     self.shortFirstLineObject = QLineF(self.firstLineX, self.firstLineY, self.firstLineX + PoleObject.shortLineLength, self.firstLineY)
-#     self.shortSecondLineObject = QLineF(self.secondLineX, self.secondLineY, self.secondLineX + PoleObject.shortLineLength, self.secondLineY)
-#
-#     self.setLine(self.centerLineObject)
-#     self.setLine(self.shortFirstLineObject)
-#     self.setLine(self.shortSecondLineObject)
-#
-#
-# def addPoleWidget(self, diagramScene):
-#     self.diagramScene = diagramScene
-#     self.drawCenterLinePen = QtGui.QPen(QColor(Qt.darkGray))
-#     self.drawCenterLinePen.setWidth(10)
-#
-#     self.drawShortLinePen = QtGui.QPen(QColor(Qt.darkGray))
-#     self.drawShortLinePen.setWidth(8)
-#     diagramScene.addLine(self.centerLineObject, self.drawCenterLinePen)
-#     diagramScene.addLine(self.shortFirstLineObject, self.drawShortLinePen)
-#     diagramScene.addLine(self.shortSecondLineObject, self.drawShortLinePen)
+        #     ObjectControlClass.diagramScene
+    #     self.calcLinePoint()
+    #     self.centerLineObject = QLineF(self.centerX, self.centerY, self.centerX, self.centerY + PoleObject.centerLineLength)
+    #     self.shortFirstLineObject = QLineF(self.firstLineX, self.firstLineY, self.firstLineX + PoleObject.shortLineLength, self.firstLineY)
+    #     self.shortSecondLineObject = QLineF(self.secondLineX, self.secondLineY, self.secondLineX + PoleObject.shortLineLength, self.secondLineY)
+    #
+    #     self.setLine(self.centerLineObject)
+    #     self.setLine(self.shortFirstLineObject)
+    #     self.setLine(self.shortSecondLineObject)
+    #
+    #
+    # def addPoleWidget(self, diagramScene):
+    #     self.diagramScene = diagramScene
+    #     self.drawCenterLinePen = QtGui.QPen(QColor(Qt.darkGray))
+    #     self.drawCenterLinePen.setWidth(10)
+    #
+    #     self.drawShortLinePen = QtGui.QPen(QColor(Qt.darkGray))
+    #     self.drawShortLinePen.setWidth(8)
+    #     diagramScene.addLine(self.centerLineObject, self.drawCenterLinePen)
+    #     diagramScene.addLine(self.shortFirstLineObject, self.drawShortLinePen)
+    #     diagramScene.addLine(self.shortSecondLineObject, self.drawShortLinePen)
 
     # unbalanceDataTable에 데이터를 넣어주는 부분
     # Pole 객체 생성 시에 함께 넣어준다.
     def insertUnbalanceDataIntoTable(idx, poleID, unbalanceClass, unbalanceInfo):
-        ObjectControlClass.unbalanceDataTable.insertRow(idx)
+
+        if idx >= ObjectControlClass.unbalanceDataTable.rowCount():
+            ObjectControlClass.unbalanceDataTable.insertRow(idx)
+
         displayUnbalceClassValue = ObjectControlClass.makeDisplayUnbalceClassValue(unbalanceClass)
         ObjectControlClass.unbalanceDataTable.setItem(idx, 0, QtWidgets.QTableWidgetItem(str(poleID)))
         ObjectControlClass.unbalanceDataTable.setItem(idx, 1, QtWidgets.QTableWidgetItem(str(displayUnbalceClassValue)))
@@ -406,6 +449,8 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
         self.centerLinePenWidth = 10
         self.shortLinePenWidth = 8
 
+        self.insertTableIndex = -1
+
         PoleObject.unbalanceClassValue = {}
         PoleObject.unbalanceInfoValue = {}
         PoleObject.unbalanceInfoSize = {}
@@ -423,9 +468,9 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
         PoleObject.gapOfShortLineY = 15
 
         # 원을 그릴 때 사용할 원의 지름을 지정
-        PoleObject.unbalanceInfoSize['Big'] = 35
-        PoleObject.unbalanceInfoSize['Medium'] = 25
-        PoleObject.unbalanceInfoSize['Small'] = 15
+        PoleObject.unbalanceInfoSize['Big'] = 45
+        PoleObject.unbalanceInfoSize['Medium'] = 35
+        PoleObject.unbalanceInfoSize['Small'] = 25
 
 
         # 불균형 위험군 분류에 따른 원의 색상 지정
@@ -528,9 +573,9 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
 
     def setUnbalanceInfoSizeValue(self):
         resultData = None
-        if self.unbalanceInfo >= PoleObject.unbalanceInfoSize['Big']:
+        if self.unbalanceClass == 'High':
             resultData = 'Big'
-        elif self.unbalanceInfo >= PoleObject.unbalanceInfoSize['Medium']:
+        elif self.unbalanceClass == 'Low':
             resultData = 'Medium'
         else:
             resultData = 'Small'
@@ -575,6 +620,10 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
 
     def drawUnbalanceStateCircle(self):
         print('self.unbalanceInfoSizeValue : ', self.unbalanceInfoSizeValue)
+
+        if self.unbalanceStateCircle is not None:
+            self.diagramScene.removeItem(self.unbalanceStateCircle)
+
         self.circleWidth, self.circleHeight = PoleObject.unbalanceInfoSize[self.unbalanceInfoSizeValue], PoleObject.unbalanceInfoSize[self.unbalanceInfoSizeValue]
         self.circleCenterPointX, self.circleCenterPointY = self.firstLineX + (PoleObject.shortLineLength / 2), self.firstLineY + (PoleObject.gapOfShortLineY / 2)
         self.circlePointX, self.circlePointY = self.circleCenterPointX - (self.circleWidth / 2), self.circleCenterPointY - (self.circleHeight / 2)
@@ -591,13 +640,14 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
         self.diagramScene.addItem(self.unbalanceStateCircle)
 
         parentObject = self.parentItem()
-        insertTableIndex = self.calcInsesrtTableIndex()
+        if self.insertTableIndex == -1:
+            self.insertTableIndex = self.calcInsesrtTableIndex()
 
         print('Parent Type : ', type(parentObject))
-        if insertTableIndex >= 0:
-            ObjectControlClass.insertUnbalanceDataIntoTable(insertTableIndex, self.getPoleID(), self.getUnbalanceClass(), self.getUnbalanceInfo())
+        if self.insertTableIndex >= 0:
+            ObjectControlClass.insertUnbalanceDataIntoTable(self.insertTableIndex, self.getPoleID(), self.getUnbalanceClass(), self.getUnbalanceInfo())
 
-        # self.unbalanceStateCircle.setParentItem(self)
+            # self.unbalanceStateCircle.setParentItem(self)
 
     def calcInsesrtTableIndex(self):
         poleObjectIndexList = ObjectControlClass.tableIndexOfPoleObject.keys()
@@ -616,6 +666,10 @@ class PoleObject(QtWidgets.QGraphicsLineItem, QtWidgets.QGraphicsEllipseItem):
 class tmpClass:
     def __init__(self):
         print('IoT 알고리즘 구현 클래스!')
+        # self.obj_uli = uli.UnbalanceLoadInfo()
+        self.date = '2017-07-01'
+        self.file_name = './predict_all.csv'
+        self.df = pd.read_csv(self.file_name)
 
     def calcPoleUnbalance(self, displayModeValue, poles):
         print('calcPoleUnbalance in')
@@ -628,7 +682,29 @@ class tmpClass:
             # poleObject.setUnbalanceClass(resultUnbalanceClass)
             resultUnbalanceInfo = self.calcUnbalanceInfo(idx)
             # poleObject.setUnbalanceInfo(resultUnbalanceInfo)
-            returnDic[poleItem] = {'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
+
+            resultUnbalanceClass = 0
+            resultUnbalanceInfo = 0
+            resultUnbalanceClassTemp = 0
+
+            if displayModeValue == 2:
+                resultUnbalanceInfo, resultUnbalanceClassTemp = UnbalanceLoadInfo().getDailyInfoCSV(self.df, poleItem, self.date)
+            elif displayModeValue == 1:
+                resultUnbalanceInfo, resultUnbalanceClassTemp = UnbalanceLoadInfo().getMonthlyInfoCSV(self.df, poleItem, self.date)
+            elif displayModeValue == 0:
+                resultUnbalanceInfo, resultUnbalanceClassTemp = UnbalanceLoadInfo().getTotalInfoCSV(self.df, poleItem, self.date)
+
+            print('unbalanceClass:', resultUnbalanceClassTemp, 'unbalanceInfo:', resultUnbalanceInfo)
+
+            if resultUnbalanceClassTemp == 0:
+                resultUnbalanceClass = 'Normal'
+            elif resultUnbalanceClassTemp == 1:
+                resultUnbalanceClass = 'Low'
+            elif resultUnbalanceClassTemp == 2:
+                resultUnbalanceClass = 'High'
+
+            returnDic[poleItem] = {'poleId': poleItem, 'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
+
             idx += 1
         return returnDic
 
@@ -687,6 +763,257 @@ class tmpClass:
         # drawTemperatureGraphCanvas = PlotCanvas(self, width=5, height=2)
         # DiagramScene.drawTemperatureGraphCanvas.drawTemperatureGraph(resultTemperatureData)
         # sys.exit(app.exec_())
+
+class UnbalanceLoadInfo():
+    def __init__(self):
+        print('머신시작1-1')
+        # DB connection
+        self.con = dbConnection.getConnection()
+        self.con.set_character_set('utf8')
+        self.cur = self.con.cursor(MySQLdb.cursors.DictCursor)
+        self.cur.execute('SET NAMES utf8;')
+        self.cur.execute('SET CHARACTER SET utf8;')
+        self.cur.execute('SET character_set_connection=utf8;')
+        self.path_dir = 'F:\\IOT\\data\\2'
+
+    # SELECT
+    def selecPoleTemp(self, sensor_id, time_start, time_end):
+        query = """SELECT TIME_ID, TEMP
+                    FROM TB_IOT_POLE_SECOND s1
+                    WHERE SENSOR_ID = '%s'
+                    AND TIME_ID BETWEEN '%s' AND '%s'
+                    """ % (sensor_id, time_start, time_end)
+        self.cur.execute(query)
+        results = self.cur.fetchall()
+        df = pd.DataFrame(list(results))
+        return df
+
+
+    # SELECT
+    def selectSensorList(self, pole_id):
+        query = """SELECT POLE_ID, SENSOR_ID, PART_NAME
+                    FROM TB_IOT_POLE_INFO s1
+                    WHERE POLE_ID = '%s'
+                    AND IFNULL(POLE_ID, '') != ''
+                    AND IFNULL(SENSOR_ID, '') != ''
+                    AND IFNULL(PART_NAME, '') != ''
+                    """ % (pole_id)
+        self.cur.execute(query)
+        results = self.cur.fetchall()
+        df = pd.DataFrame(list(results))
+        return df
+
+    def getMonthlyInfoDB(self, pole_id, time_start, time_end):
+        print(time_start)
+        print(time_end)
+        index_start = datetime.datetime.strptime(time_start[:19], '%Y-%m-%d %H:%M:%S')
+        index_end = datetime.datetime.strptime(time_end[:19], '%Y-%m-%d %H:%M:%S')
+        time_start_predict = datetime.datetime(index_start.year, index_start.month, index_start.day, 0, 0, 0)
+        time_end_predict = time_start_predict + datetime.timedelta(1) - datetime.timedelta(seconds=1)
+
+        unbalanceCount = 0
+        unbalanceClass = 0
+
+        cnt = 0
+        while time_start_predict < index_end:
+            time_start_predict += datetime.timedelta(days=1)
+            time_end_predict += datetime.timedelta(days=1)
+            unbalanceCount += self.getDailyInfo(pole_id, time_start_predict, time_end_predict)
+            # print('unbalanceCount:', unbalanceCount)
+            cnt += 1
+            # print('cnt:', cnt)
+
+        if unbalanceCount > 10:
+            unbalanceClass = 2
+        elif unbalanceCount > 5:
+            unbalanceClass = 1
+
+        return unbalanceCount, unbalanceClass
+
+
+    def getDailyInfoDB(self, pole_id, time_start, time_end):
+
+        df = self.getData(pole_id, time_start, time_end)
+        arr = self.setInput(df)
+        unbalanceCount = 0
+        # print('arr:', len(arr))
+        if len(arr) == 72:
+            # print('예측시작')
+            unbalanceCount = self.model.predict(arr)
+
+        return unbalanceCount
+
+    def getTotalInfoCSV(self, df, pole_id, date):
+        df = df[df['POLE_ID'] == pole_id]
+
+        index_start = datetime.datetime.strptime('2017-06-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+        index_end = datetime.datetime.strptime('2017-12-31 23:59:59', '%Y-%m-%d %H:%M:%S')
+        time_start_predict = datetime.datetime(index_start.year, index_start.month, index_start.day, 0, 0, 0)
+        time_end_predict = time_start_predict + datetime.timedelta(1) - datetime.timedelta(seconds=1)
+
+        unbalanceCount = 0
+        unbalanceClass = 0
+
+        cnt = 0
+        while time_start_predict < index_end:
+            unbalanceCountDaily, unbalanceClassDaily = self.getDailyInfoCSV(df, pole_id, str(time_start_predict)[0:10])
+            time_start_predict += datetime.timedelta(days=1)
+            time_end_predict += datetime.timedelta(days=1)
+            # print('unbalanceCount:', unbalanceCount)
+            unbalanceCount += unbalanceCountDaily
+            cnt += 1
+
+        if unbalanceCount > 70:
+            unbalanceClass = 2
+        elif unbalanceCount > 50:
+            unbalanceClass = 1
+
+        return unbalanceCount, unbalanceClass
+
+    def getMonthlyInfoCSV(self, df, pole_id, date):
+        df = df[df['POLE_ID'] == pole_id]
+
+        index_start = datetime.datetime.strptime('2017-07-01 00:00:00', '%Y-%m-%d %H:%M:%S')
+        index_end = datetime.datetime.strptime('2017-07-31 23:59:59', '%Y-%m-%d %H:%M:%S')
+        time_start_predict = datetime.datetime(index_start.year, index_start.month, index_start.day, 0, 0, 0)
+        time_end_predict = time_start_predict + datetime.timedelta(1) - datetime.timedelta(seconds=1)
+
+        unbalanceCount = 0
+        unbalanceClass = 0
+
+        cnt = 0
+        while time_start_predict < index_end:
+            unbalanceCountDaily, unbalanceClassDaily = self.getDailyInfoCSV(df, pole_id, str(time_start_predict)[0:10])
+            time_start_predict += datetime.timedelta(days=1)
+            time_end_predict += datetime.timedelta(days=1)
+            # print('unbalanceCount:', unbalanceCount)
+            unbalanceCount += unbalanceCountDaily
+            cnt += 1
+
+        if unbalanceCount > 10:
+            unbalanceClass = 2
+        elif unbalanceCount > 5:
+            unbalanceClass = 1
+
+        return unbalanceCount, unbalanceClass
+
+    def getDailyInfoCSV(self, df, pole_id, date):
+        df = df[df['POLE_ID'] == pole_id]
+        df = df[df['DATE'] == date]
+        resultClass = 0
+        if df['UNBALANCE_FLAG'].values[0] == 1:
+            resultClass = 1
+        return df['UNBALANCE_FLAG'].values[0], resultClass
+
+    def setInput(self, df):
+        arr = np.array([])
+        for item in df.columns.values:
+            arr = np.append(arr, df[item].values)
+        for idx in range(3 - len(df.columns.values)):
+            arr = np.append(arr, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        return arr
+
+
+    def getData(self, pole_id, time_start, time_end):
+        start = time.time()
+
+        df_result = pd.DataFrame(columns=['TIME_ID'])
+        df_result.set_index('TIME_ID', inplace=True)
+
+        df_sensor = self.selectSensorList(pole_id)
+        for idx in range(len(df_sensor)):
+            sensor_id = str(df_sensor['SENSOR_ID'][idx])
+            part_name = str(df_sensor['PART_NAME'][idx])
+            if part_name == 'nan' or part_name != '변압기 본체':
+                continue
+            df_temp = self.selecPoleTemp(sensor_id, time_start, time_end)
+            if len(df_temp) == 0:
+                continue
+            df_temp = df_temp[['TIME_ID', 'TEMP']]
+            df_temp['TEMP'] = df_temp['TEMP'].astype(float)
+            df_temp.columns = ['TIME_ID', sensor_id]
+            df_temp.set_index('TIME_ID', inplace=True)
+            df_temp.index = pd.to_datetime(df_temp.index)
+
+            df_temp = df_temp.resample('60T').mean()
+            df_result = pd.merge(df_result, df_temp, left_index=True, right_index=True, how='outer')
+
+        # mask = (df['TIME_ID'] >=  '') & (df['TIME_ID'] <= '')
+        # df = df.loc[mask],ㅣㅣㅣㅣㅣ
+
+        print(time.time() - start)
+
+        return df_result
+
+
+    def getListPole(self):
+        return  [
+            '8132X291',
+            '8132W782',
+            '8232P471',
+            '8232R383',
+            '8232R152',
+            '8132W212',
+            '8132W832',
+            '8232P531',
+            '8132W952',
+            '8132Z961',
+            '8132X914',
+            '8132Q911',
+            '8132W231',
+            '8132W122',
+            '8132X921',
+            '8132X152',
+            '8132X122',
+            '8132W621',
+            '8132W981',
+            '8132X601'
+        ]
+
+
+    def writePredictCsv(self):
+
+        time_start = '2017-06-01 00:00:00'
+        time_end = '2017-12-31 23:59:59'
+
+        list_pole = self.getListPole()
+
+        obj = UnbalanceLoadInfo()
+
+        df_result = pd.DataFrame(columns=['DATE', 'POLE_ID', 'UNBALANCE_FLAG'])
+
+        for pole_id in list_pole:
+            index_start = datetime.datetime.strptime(time_start[:19], '%Y-%m-%d %H:%M:%S')
+            index_end = datetime.datetime.strptime(time_end[:19], '%Y-%m-%d %H:%M:%S')
+            time_start_predict = datetime.datetime(index_start.year, index_start.month, index_start.day, 0, 0, 0)
+            time_end_predict = time_start_predict + datetime.timedelta(1) - datetime.timedelta(seconds=1)
+
+            df = obj.getData(pole_id, time_start, time_end)
+
+            cnt = 0
+            while time_start_predict < index_end:
+
+                df_data = df.loc[time_start_predict:time_end_predict,:]
+
+                arr = obj.setInput(df_data)
+                unbalanceFlag = 0
+                # print('arr:', len(arr))
+                if len(arr) == 72:
+                    # print('예측시작')
+                    unbalanceFlag = obj.model.predict(arr)
+                print(time_start_predict)
+                df_result = df_result.append({'DATE': time_start_predict, 'POLE_ID':pole_id, 'UNBALANCE_FLAG':unbalanceFlag}, ignore_index=True)
+
+                time_start_predict += datetime.timedelta(days=1)
+                time_end_predict += datetime.timedelta(days=1)
+
+                print('unbalanceFlag:', unbalanceFlag)
+                cnt += 1
+                # print('cnt:', cnt)
+
+        # print(df_result)
+        df_result.set_index('DATE', inplace=True)
+        df_result.to_csv('predict_all.csv')
 
 class temperatureGraphWindow(object):
     def __init__(self):
@@ -790,7 +1117,28 @@ class PlotCanvas(FigureCanvas):
 # ************************************* Main 함수 구현부 ****************************************************
 app = QtWidgets.QApplication([])
 
-poleIdArr = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
+poleIdArr = [
+    '8132X291',
+    '8132W782',
+    '8232P471',
+    '8232R383',
+    '8232R152',
+    '8132W212',
+    '8132W832',
+    '8232P531',
+    '8132W952',
+    '8132Z961',
+    '8132X914',
+    '8132Q911',
+    '8132W231',
+    '8132W122',
+    '8132X921',
+    '8132X152',
+    '8132X122',
+    '8132W621',
+    '8132W981',
+    '8132X601'
+]
 tmpArrayCnt = len(poleIdArr)
 forCnt = 0
 
@@ -815,8 +1163,8 @@ resultPoleDataDic = resultPoleValueObject.calcPoleUnbalance(int(ObjectControlCla
 for poleId in poleIdArr:
     resultDataDicOfPole = resultPoleDataDic[poleId]
     poleObject = ObjectControlClass.poleObjectDic[poleId]
-    print('resultDataDicOfPole[unbalanceClass] : ', resultDataDicOfPole['unbalanceClass'])
-    print('resultDataDicOfPole[unbalanceInfo] : ', resultDataDicOfPole['unbalanceInfo'])
+    # print('resultDataDicOfPole[unbalanceClass] : ', resultDataDicOfPole['unbalanceClass'])
+    # print('resultDataDicOfPole[unbalanceInfo] : ', resultDataDicOfPole['unbalanceInfo'])
     poleObject.setUnbalanceClass(resultDataDicOfPole['unbalanceClass'])
     poleObject.setUnbalanceInfo(resultDataDicOfPole['unbalanceInfo'])
     poleObject.drawUnbalanceStateCircle()

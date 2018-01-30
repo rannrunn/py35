@@ -628,7 +628,7 @@ class tmpClass:
             # poleObject.setUnbalanceClass(resultUnbalanceClass)
             resultUnbalanceInfo = self.calcUnbalanceInfo(idx)
             # poleObject.setUnbalanceInfo(resultUnbalanceInfo)
-            returnDic[poleItem] = {'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
+            returnDic[poleItem] = {'poleId': poleItem, 'unbalanceClass': resultUnbalanceClass, 'unbalanceInfo': resultUnbalanceInfo}
             idx += 1
         return returnDic
 
@@ -790,28 +790,7 @@ class PlotCanvas(FigureCanvas):
 # ************************************* Main 함수 구현부 ****************************************************
 app = QtWidgets.QApplication([])
 
-poleIdArr = [
-    '8132X291',
-    '8132W782',
-    '8232P471',
-    '8232R383',
-    '8232R152',
-    '8132W212',
-    '8132W832',
-    '8232P531',
-    '8132W952',
-    '8132Z961',
-    '8132X914',
-    '8132Q911',
-    '8132W231',
-    '8132W122',
-    '8132X921',
-    '8132X152',
-    '8132X122',
-    '8132W621',
-    '8132W981',
-    '8132X601'
-]
+poleIdArr = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
 tmpArrayCnt = len(poleIdArr)
 forCnt = 0
 

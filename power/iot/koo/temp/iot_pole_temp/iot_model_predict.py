@@ -15,7 +15,7 @@ print(type(x_test[0]))
 y_test = df_y_train.values[4000:]
 # print(x_train)
 # print(x_test)
-xhat_idx = np.random.choice(x_test.shape[0], 100)
+xhat_idx = np.random.choice(x_test.shape[0], 1000)
 xhat = x_test[xhat_idx]
 
 print(type(x_test))

@@ -12,7 +12,6 @@
       <sourceFolder url="file://$MODULE_DIR$/sample/pyqt5/pyqt5-master/examples/draganddrop/puzzle" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/water_ml" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/power/iot/koo/temp/iot_pole_unbalance_load" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/power/iot/koo/iot_ml" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />

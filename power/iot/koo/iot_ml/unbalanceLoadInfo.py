@@ -4,7 +4,6 @@ import pandas as pd
 import time
 import dbConnection
 import MySQLdb
-import modelUnbalanceLoad as mul
 import datetime
 
 class UnbalanceLoadInfo():
@@ -20,7 +19,6 @@ class UnbalanceLoadInfo():
         self.cur.execute('SET character_set_connection=utf8;')
         print('머신시작1-1-5')
         self.path_dir = 'F:\\IOT\\data\\2'
-        self.model = mul.ModelUnbalanceLoad()
         print('머신시작1-2')
 
     # SELECT
@@ -115,8 +113,6 @@ class UnbalanceLoadInfo():
         elif unbalanceCount > 50:
             unbalanceClass = 1
 
-        print('pole_id:', pole_id, 'unbalanceCount:', unbalanceCount, 'unbalanceClass:', unbalanceClass)
-
         return unbalanceCount, unbalanceClass
 
     def getMonthlyInfoCSV(self, df, pole_id, date):
@@ -143,8 +139,6 @@ class UnbalanceLoadInfo():
             unbalanceClass = 2
         elif unbalanceCount > 5:
             unbalanceClass = 1
-
-        print('pole_id:', pole_id, 'unbalanceCount:', unbalanceCount, 'unbalanceClass:', unbalanceClass)
 
         return unbalanceCount, unbalanceClass
 
@@ -278,9 +272,11 @@ if __name__ == '__main__':
     df = pd.read_csv(file_name)
 
     for pole_id in list_pole:
-        #unbalanceCount, unbalanceClass = obj.getTotalInfoCSV(df, pole_id, date)
-        unbalanceCount, unbalanceClass = obj.getMonthlyInfoCSV(df, pole_id, date)
-        # unbalanceCount, unbalanceClass = obj.getDailyInfoCSV(df, pole_id, date)
+        # unbalanceCount, unbalanceClass = obj.getTotalInfoCSV(df, pole_id, date)
+        # unbalanceCount, unbalanceClass = obj.getMonthlyInfoCSV(df, pole_id, date)
+        unbalanceCount, unbalanceClass = obj.getDailyInfoCSV(df, pole_id, date)
+        print('pole_id:', pole_id, 'unbalanceCount:', unbalanceCount, 'unbalanceClass:', unbalanceClass)
+        pass
 
 
 
