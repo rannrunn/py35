@@ -9,7 +9,7 @@ np.set_printoptions(threshold=np.nan)
 import os
 import time
 import datetime
-from function import statistics
+from project.water_leak.function import statistics
 import tensorflow as tf
 import traceback
 

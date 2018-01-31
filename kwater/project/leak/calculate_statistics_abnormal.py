@@ -1,10 +1,13 @@
 # 모니터링 화면에 사용하는 소스
 # 실제 운영서버에서는 사용되지 않지만 남겨놓습니다.
 # coding: utf-8
+import traceback
+
 import MySQLdb
 import dbconnection as conn
-import traceback
-import common as comm
+
+from project.water_leak import common as comm
+
 
 # 평균과 표준편차를 구하는 함수
 def getAvgStddev(cur, dict, section, func):

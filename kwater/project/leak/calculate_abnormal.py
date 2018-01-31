@@ -1,10 +1,12 @@
 # 모니터링 화면에 사용하는 소스
 # 실제 운영서버에서는 사용되지 않지만 남겨놓습니다.
+import threading
+import traceback
+
 import MySQLdb
 import dbconnection as conn
-import common as comm
-import traceback
-import threading
+
+from project.water_leak import common as comm
 
 
 def getCnt(cur, dict):

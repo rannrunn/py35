@@ -1,12 +1,13 @@
 ﻿# 통계 계산을 하는 소스
 
 import traceback
+import warnings
 
 import MySQLdb
-
-import common as comm
 import dbconnection as conn
-import warnings
+
+from project.water_leak import common as comm
+
 warnings.simplefilter("error")
 
 

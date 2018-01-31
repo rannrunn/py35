@@ -1,12 +1,10 @@
 ﻿# 회귀 분석을 하는 소스
 
-import traceback
-
 import MySQLdb
+import dbconnection as conn
 import numpy as np
 
-import common as comm
-import dbconnection as conn
+from project.water_leak import common as comm
 
 
 # 회귀 분석을 할 A 값 들의 리스트

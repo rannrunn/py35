@@ -3,12 +3,13 @@
 import datetime
 import json
 import socket
-import traceback
 from _thread import *
 
 import calculate_regression
 import calculate_statistics
-import validation as valid
+
+from project.water_leak import validation as valid
+
 
 # 딕셔너리에서 벨류를 가져오는 함수
 def getDictValue(dict, key):
