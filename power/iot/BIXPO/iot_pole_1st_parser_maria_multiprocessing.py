@@ -53,7 +53,7 @@ def parser(name):
     columns = ','.join(dict_initial.keys())
 
     # 파일명을 변경해 가면서 인서트
-    file_name = 'D:/010_data/kepco/iot_pole/2nd/'+ name
+    file_name = 'D:/010_data/kepco/iot_pole/1st/'+ name
 
     if not os.path.exists(file_name):
         return

@@ -13,7 +13,7 @@ start = time.time()
 con = MySQLdb.connect('localhost', 'root', '1111', 'kepco')
 cur = con.cursor(MySQLdb.cursors.DictCursor)
 # 테이블 명
-table = 'TB_IOT_POLE_V3'
+table = 'TB_IOT_POLE_FIRST_DUMMY'
 # DB 에 insert 하기 위한 dictionary 형식
 dict_initial = {'file_name':'','time_id':'','sensor_id':'','pole_id':'','ri':'','pi':'','temp':'','humi':'','pitch':'','roll':'','ambient':'','uv':'','press':'','battery':'','period':'','current':'','shock':'','geomag_x':'','geomag_y':'','geomag_z':'','var_x':'','var_y':'','var_z':'','usn':'','ntc':'','uvc':''}
 # 컬럼 생성
@@ -42,11 +42,11 @@ def main():
     key_accero = ["pitch","roll","current","shock"]
 
     cnt = 0
-    file_first = "C:/_data/data/sensor_"
+    file_first = "G:\\2차/sensor_"
     # insert 할 파일 시작일
-    file_date = "2017-06-20"
+    file_date = "2017-09-21"
     # insert 할 파일 종료일
-    last_date = "2017-09-20"
+    last_date = "2017-09-22"
     FMT = '%Y-%m-%d'
     values_list = []
 
