@@ -1,1 +1,0 @@
-# http://nbviewer.jupyter.org/gist/hyeshik/cf9f3d7686e07eedbfda?revision=6
