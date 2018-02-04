@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/keras_adversarial" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/keras_adversarial/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Keras-MNIST-GAN-master" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sample/machine_learning/gan/RGAN-master" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
