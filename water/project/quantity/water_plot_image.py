@@ -171,6 +171,7 @@ def main(path_dir, period_image, time_start, time_end, resample_how, mean_or_sum
     process(dir_output, period_image, time_start, time_end, resample_how, mean_or_sum, ylim)
 
 
+
 if __name__ == '__main__':
 
     start_time_main = time.time()
