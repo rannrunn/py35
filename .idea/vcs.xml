@@ -2,5 +2,11 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/test/async-rl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/test/chainer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/test/chainer-DCGAN" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/test/chainerrl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/test/reinforcement-learning-kr" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/test/tf-a3c-gpu" vcs="Git" />
   </component>
 </project>
