@@ -7,6 +7,11 @@
       <sourceFolder url="file://$MODULE_DIR$/keras_adversarial/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Keras-MNIST-GAN-master" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sample/machine_learning/gan/RGAN-master" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/TensorFlow-Tutorials-master/12 - DQN" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/A3C_tf" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/reinforcement-learning" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/reinforcement-learning/PolicyGradient/a3c" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test/chainer" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

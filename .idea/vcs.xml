@@ -2,5 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="C:\_ws\python\py35\test\chainer" vcs="Git" />
+    <mapping directory="C:\_ws\python\py35\test\chainer-DCGAN" vcs="Git" />
   </component>
 </project>
