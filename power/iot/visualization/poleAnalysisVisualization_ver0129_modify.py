@@ -15,8 +15,6 @@ from PyQt5.QtWidgets import QSizePolicy
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-import dbConnection
-
 
 # import unbalanceLoadInfo as uli
 
@@ -769,13 +767,6 @@ class tmpClass:
 class UnbalanceLoadInfo():
     def __init__(self):
         print('머신시작1-1')
-        # DB connection
-        self.con = dbConnection.getConnection()
-        self.con.set_character_set('utf8')
-        self.cur = self.con.cursor(MySQLdb.cursors.DictCursor)
-        self.cur.execute('SET NAMES utf8;')
-        self.cur.execute('SET CHARACTER SET utf8;')
-        self.cur.execute('SET character_set_connection=utf8;')
         self.path_dir = 'F:\\IOT\\data\\2'
 
     # SELECT
