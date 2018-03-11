@@ -7,7 +7,7 @@ from scipy.stats import mode
 
 import sys
 sys.path
-sys.path.append('C:/_ws/python/py35/test/RGAN')
+sys.path.append('C:/_ws/python/py35/analysis/RGAN')
 import data_utils
 import plotting
 import model

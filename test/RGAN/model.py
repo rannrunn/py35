@@ -15,6 +15,7 @@ from differential_privacy.privacy_accountant.tf import accountant
 
 # --- to do with latent space --- #
 
+# seq_length : 30
 def sample_Z(batch_size, seq_length, latent_dim, use_time=False, use_noisy_time=False):
     sample = np.float32(np.random.normal(size=[batch_size, seq_length, latent_dim]))
     if use_time:
