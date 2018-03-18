@@ -24,12 +24,12 @@ def plot_results_multiple(predicted_data, true_data, prediction_len):
 #Main Run Thread
 if __name__=='__main__':
 	global_start_time = time.time()
-	epochs  = 1
+	epochs  = 1000
 	seq_len = 50
 
 	print('> Loading data... ')
 
-	X_train, y_train, X_test, y_test = lstm.load_data('sp500.csv', seq_len, True)
+	X_train, y_train, X_test, y_test = lstm.load_data('sinwave.csv', seq_len, True)
 
 	print('> Data Loaded. Compiling...')
 
