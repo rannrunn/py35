@@ -16,15 +16,15 @@ import tensorflow as tf
 from tensorflow.contrib import rnn
 
 # Parameters
-learning_rate = 0.001
-training_iters = 300000
+learning_rate = 0.0005
+training_iters = 2000000
 batch_size = 50
 display_step = 100
 
 # Network Parameters
 n_input = 1  # input is sin(x), a scalar
 n_steps = 25  # timesteps
-n_hidden = 32  # hidden layer num of features
+n_hidden = 128  # hidden layer num of features
 n_outputs = 100  # output is a series of sin(x+...)
 n_layers = 4  # number of stacked LSTM layers
 
