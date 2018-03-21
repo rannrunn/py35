@@ -37,12 +37,45 @@ samples, pdf, labels = data_utils.get_samples_and_labels(settings)
 # pdf : None
 # labels = {'train': None, 'vali': None, 'test': None}
 
+
+
+
 # --- save settings, data --- #
 print('Ready to run with settings:')
 for (k, v) in settings.items(): print(v, '\t',  k)
 # add the settings to local environment
 # WARNING: at this point a lot of variables appear
 locals().update(settings)
+
+
+# 경고문을 제거하기 위해 parser에서 argument를 가져와 전역변수에 담아준 것
+args = parser.parse_args()
+identifier = args.identifier
+data = args.data
+batch_size = args.batch_size
+seq_length = args.seq_length
+latent_dim = args.latent_dim
+num_signals = args.num_signals
+cond_dim = args.cond_dim
+predict_labels = args.predict_labels
+kappa = args.kappa
+wrong_labels = args.wrong_labels
+learning_rate = args.learning_rate
+l2norm_bound = args.l2norm_bound
+batches_per_lot = args.batches_per_lot
+dp_sigma = args.dp_sigma
+dp = args.dp
+num_samples = args.num_samples
+# num_generated_features = args.num_generated_features
+use_time = args.use_time
+max_val = args.max_val
+one_hot = args.one_hot
+multivariate_mnist = args.multivariate_mnist
+resample_rate_in_min = args.resample_rate_in_min
+num_epochs = args.num_epochs
+shuffle = args.shuffle
+
+
 json.dump(settings, open('./experiments/settings/' + identifier + '.txt', 'w'), indent=0)
 
 # data : sine
