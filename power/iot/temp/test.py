@@ -1,23 +1,39 @@
-# max
-# 1차 {'TEMP': '300.000', 'AMBIENT': '60000.000', 'VAR_Z': '1089.000', 'UV': '200.000', 'PITCH': '500.000', 'HUMI': '300.000', 'BATTERY': '100.000', 'GEOMAG_Z': '1064.000', 'VAR_X': '937.000', 'USN': '235.000', 'NTC': '34.000', 'PRESS': '1031.900', 'CURRENT': '1.000', 'PERIOD': '65535.000', 'UVC': '0.367', 'ROLL': '500.000', 'VAR_Y': '10594.000', 'GEOMAG_Y': '250.000', 'SHOCK': '1.000', 'GEOMAG_X': '159.000')}
-# 2차 {'TEMP': '300.000', 'AMBIENT': '60000.000', 'VAR_Z': '21429.000', 'UV': '200.000', 'PITCH': '500.000', 'HUMI': '300.000', 'BATTERY': '207.810', 'GEOMAG_Z': '3705.000', 'VAR_X': '23815.000', 'USN': '278.000', 'NTC': '120.000', 'PRESS': '1056.000', 'CURRENT': '1.000', 'PERIOD': '65535.000', 'UVC': '7.040', 'ROLL': '500.000', 'VAR_Y': '15751.000', 'GEOMAG_Y': '4915.000', 'SHOCK': '0.000', 'GEOMAG_X': '4204.000')}
-# 에러 제거 후 최대값 : 1차 AMBIENT 31889, 2차 AMBIENT 4906
-#
-# min
-# 1차 {'GEOMAG_Z': '-1253.000', 'AMBIENT': '0.000', 'CURRENT': '1.000', 'TEMP': '-40.000', 'VAR_X': '-5438.000', 'HUMI': '0.000', 'GEOMAG_Y': '-552.000', 'BATTERY': '0.000', 'SHOCK': '0.000', 'PITCH': '-180.100', 'NTC': '6.000', 'USN': '0.000', 'GEOMAG_X': '-126.000', 'ROLL': '-90.000', 'PRESS': '0.000', 'UVC': '0.000', 'VAR_Z': '-1113.000', 'VAR_Y': '-1101.000', 'PERIOD': '10.000', 'UV': '0.000')}
-# 2차 {'GEOMAG_Z': '-3476.000', 'AMBIENT': '0.000', 'CURRENT': '1.000', 'TEMP': '-40.000', 'VAR_X': '-17966.000', 'HUMI': '0.000', 'GEOMAG_Y': '-1737.000', 'BATTERY': '0.000', 'SHOCK': '0.000', 'PITCH': '-180.100', 'NTC': '-20.000', 'USN': '0.000', 'GEOMAG_X': '-4422.000', 'ROLL': '-90.000', 'PRESS': '0.000', 'UVC': '0.000', 'VAR_Z': '-16126.000', 'VAR_Y': '-24002.000', 'PERIOD': '60.000', 'UV': '0.000')}
-# Total Time:844.1308
+# 2차로 받은 폴 데이터의 파일 별 라인수를 세는 코드
+# coding: utf-8
+import os
+import datetime
 
-variable_all = ['TEMP', 'HUMI', 'PITCH', 'ROLL', 'AMBIENT', 'UV', 'PRESS', 'BATTERY', 'SHOCK','GEOMAG_X','GEOMAG_Y','GEOMAG_Z','VAR_X','VAR_Y','VAR_Z', 'USN', 'NTC', 'UVC']
+def main():
 
-최대값1차 = {'TEMP': '300.000', 'AMBIENT': '60000.000', 'VAR_Z': '1089.000', 'UV': '200.000', 'PITCH': '500.000', 'HUMI': '300.000', 'BATTERY': '100.000', 'GEOMAG_Z': '1064.000', 'VAR_X': '937.000', 'USN': '235.000', 'NTC': '34.000', 'PRESS': '1031.900', 'CURRENT': '1.000', 'PERIOD': '65535.000', 'UVC': '0.367', 'ROLL': '500.000', 'VAR_Y': '10594.000', 'GEOMAG_Y': '250.000', 'SHOCK': '1.000', 'GEOMAG_X': '159.000'}
-최소값1차 = {'TEMP': '300.000', 'AMBIENT': '60000.000', 'VAR_Z': '21429.000', 'UV': '200.000', 'PITCH': '500.000', 'HUMI': '300.000', 'BATTERY': '207.810', 'GEOMAG_Z': '3705.000', 'VAR_X': '23815.000', 'USN': '278.000', 'NTC': '120.000', 'PRESS': '1056.000', 'CURRENT': '1.000', 'PERIOD': '65535.000', 'UVC': '7.040', 'ROLL': '500.000', 'VAR_Y': '15751.000', 'GEOMAG_Y': '4915.000', 'SHOCK': '0.000', 'GEOMAG_X': '4204.000'}
+    file_names = ['NT_SENSOR_XML.sql']
 
-최대값2차 = {'GEOMAG_Z': '-1253.000', 'AMBIENT': '0.000', 'CURRENT': '1.000', 'TEMP': '-40.000', 'VAR_X': '-5438.000', 'HUMI': '0.000', 'GEOMAG_Y': '-552.000', 'BATTERY': '0.000', 'SHOCK': '0.000', 'PITCH': '-180.100', 'NTC': '6.000', 'USN': '0.000', 'GEOMAG_X': '-126.000', 'ROLL': '-90.000', 'PRESS': '0.000', 'UVC': '0.000', 'VAR_Z': '-1113.000', 'VAR_Y': '-1101.000', 'PERIOD': '10.000', 'UV': '0.000'}
-최소값2차 = {'GEOMAG_Z': '-3476.000', 'AMBIENT': '0.000', 'CURRENT': '1.000', 'TEMP': '-40.000', 'VAR_X': '-17966.000', 'HUMI': '0.000', 'GEOMAG_Y': '-1737.000', 'BATTERY': '0.000', 'SHOCK': '0.000', 'PITCH': '-180.100', 'NTC': '-20.000', 'USN': '0.000', 'GEOMAG_X': '-4422.000', 'ROLL': '-90.000', 'PRESS': '0.000', 'UVC': '0.000', 'VAR_Z': '-16126.000', 'VAR_Y': '-24002.000', 'PERIOD': '60.000', 'UV': '0.000'}
+    for file_name in file_names:
 
-delta = ''
-for item in variable_all:
-    delta += '\'' + item + '\'' + ':' + '\'' + 최소값2차[item] + '\', '
+        # 파일 순차 탐색
+        cnt = 0
+        file_path = 'D:/KEPIOT/KEPIOT/' + file_name
 
-print(delta)
+        # 파일이 존재하는 지 체크
+        if not os.path.exists(file_path):
+            print('not exist:', file_name)
+            continue
+
+        # while 문 전에 파일을 읽어야 한다.
+        f = open(file_path, 'rt', encoding='UTF8')
+        # 파일 내 라인 탐색
+        while True:
+            line = f.readline()
+            # 라인이 존재하는 지 체크
+            if not line:
+                print(file_path, ': ', cnt)
+                # 라인 카운트 개수 초기화
+                cnt = 0
+                break
+
+            cnt = cnt + 1
+            #print(cnt)
+
+if __name__ == '__main__':
+    main()
+
+

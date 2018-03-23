@@ -59,8 +59,7 @@ def rgan_options_parser():
             to 1')
     # options pertaining to training
     parser.add_argument('--learning_rate', type=float, default=0.1)
-    # 배치 사이즈 28일 경우 자원 부족 오류가 발생해 주석 처리하고 마지막에 추가
-    parser.add_argument('--batch_size', type=int, default=14)
+    parser.add_argument('--batch_size', type=int, default=28)
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--D_rounds', type=int, default=5, help='number of rounds \
             of discriminator training')
