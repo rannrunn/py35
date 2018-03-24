@@ -125,7 +125,7 @@ heuristic_sigma_training = median_pairwise_distance(samples['vali'])
 best_mmd2_so_far = 1000
 
 # optimise sigma using that (that's t-hat)
-batch_multiplier = 5000//batch_size
+batch_multiplier = 1000//batch_size
 eval_size = batch_multiplier*batch_size
 eval_eval_size = int(0.2*eval_size)
 eval_real_PH = tf.placeholder(tf.float32, [eval_eval_size, seq_length, num_generated_features])
@@ -145,6 +145,7 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 vis_Z = model.sample_Z(batch_size, seq_length, latent_dim, use_time)
+print('CGAN:', CGAN) # False
 if CGAN:
     vis_C = model.sample_C(batch_size, cond_dim, max_val, one_hot)
     if 'mnist' in data:
