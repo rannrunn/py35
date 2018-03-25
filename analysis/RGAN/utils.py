@@ -58,8 +58,10 @@ def rgan_options_parser():
             "scale" parameter at the output of the generator learnable (else fixed \
             to 1')
     # options pertaining to training
-    parser.add_argument('--learning_rate', type=float, default=0.1)
+    # default learning_rate : 0.1
+    parser.add_argument('--learning_rate', type=float, default=0.0001)
     parser.add_argument('--batch_size', type=int, default=28)
+    # default num_epochs : 100
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--D_rounds', type=int, default=5, help='number of rounds \
             of discriminator training')
