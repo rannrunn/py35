@@ -13,9 +13,9 @@ def rgan_options_parser():
     parser.add_argument('--settings_file', help='json file of settings, overrides everything else', type=str, default='')
     # options pertaining to data
     parser.add_argument('--data', help='what kind of data to train with?',
-            default='gp_rbf',
-            choices=['gp_rbf', 'sine', 'mnist', 'load',
-                'resampled_eICU', 'eICU_task'])
+                        default='gp_rbf',
+                        choices=['gp_rbf', 'sine', 'mnist', 'load',
+                                 'resampled_eICU', 'eICU_task'])
     parser.add_argument('--num_samples', type=int, help='how many training examples \
                     to generate?', default=28*5*100)
     parser.add_argument('--seq_length', type=int, default=30)
@@ -32,17 +32,17 @@ def rgan_options_parser():
             of conditioning with labels, require model to output them')
     ### for gp_rbf
     parser.add_argument('--scale', type=float, default=0.1)
-            ### for sin (should be using subparsers for this...)
+    ### for sin (should be using subparsers for this...)
     parser.add_argument('--freq_low', type=float, default=1.0)
     parser.add_argument('--freq_high', type=float, default=5.0)
     parser.add_argument('--amplitude_low', type=float, default=0.1)
     parser.add_argument('--amplitude_high', type=float, default=0.9)
-            ### for mnist
+    ### for mnist
     parser.add_argument('--multivariate_mnist', type=bool, default=False)
     parser.add_argument('--full_mnist', type=bool, default=False)
-            ### for loading
+    ### for loading
     parser.add_argument('--data_load_from', type=str, default='')
-            ### for eICU
+    ### for eICU
     parser.add_argument('--resample_rate_in_min', type=int, default=15)
     # hyperparameters of the model
     parser.add_argument('--hidden_units_g', type=int, default=100)
@@ -58,10 +58,8 @@ def rgan_options_parser():
             "scale" parameter at the output of the generator learnable (else fixed \
             to 1')
     # options pertaining to training
-    # default learning_rate : 0.1
-    parser.add_argument('--learning_rate', type=float, default=0.0001)
+    parser.add_argument('--learning_rate', type=float, default=0.1)
     parser.add_argument('--batch_size', type=int, default=28)
-    # default num_epochs : 100
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--D_rounds', type=int, default=5, help='number of rounds \
             of discriminator training')
@@ -81,11 +79,11 @@ def rgan_options_parser():
     parser.add_argument('--dp', type=bool, default=False, help='train discriminator \
             with differentially private SGD?')
     parser.add_argument('--l2norm_bound', type=float, default=1e-5,
-            help='bound on norm of individual gradients for DP training')
+                        help='bound on norm of individual gradients for DP training')
     parser.add_argument('--batches_per_lot', type=int, default=1,
-            help='number of batches per lot (for DP)')
+                        help='number of batches per lot (for DP)')
     parser.add_argument('--dp_sigma', type=float, default=1e-5,
-            help='sigma for noise added (for DP)')
+                        help='sigma for noise added (for DP)')
 
     return parser
 
