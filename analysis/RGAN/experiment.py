@@ -77,6 +77,9 @@ shuffle = args.shuffle
 
 
 json.dump(settings, open('./experiments/settings/' + identifier + '.txt', 'w'), indent=0)
+print(np.array(samples['train'])[0])
+print(type(samples))
+# print(samples['train'])
 
 # data : sine
 # identifier : test
