@@ -23,9 +23,9 @@ print('print:', len(list_dict_key))
 
 # 테이블명
 table = 'NT_SENSOR_XML_4' #Insert 행을 넣어줄 DB_Table명
-query_insert_1 = "insert into NT_SENSOR_XML_4(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+query_insert_1 = "insert into NT_SENSOR_XML_1(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 query_insert_4 = "insert into NT_SENSOR_XML_4(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-query_insert_6 = "insert into NT_SENSOR_XML_4(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+query_insert_6 = "insert into NT_SENSOR_XML_6(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 print(query_insert_1)
 
@@ -60,11 +60,11 @@ def parser(limit_number):
     flag = 0 # break 조건
 
     num1 = (limit_number * 10000) - 4999999
-    num2 = (limit_number * 10000) - 4999999 + 10000
+    num2 = (limit_number * 10000) - 4999999 + 9999
     max_number = limit_number * 10000
 
     cnt = 0
-    cnt_batch = 50
+    cnt_batch = 10000
     values_list_1 = []
     values_list_4 = []
     values_list_6 = []
@@ -209,6 +209,6 @@ def parser(limit_number):
 if __name__ == '__main__':
 
     max_numbers = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
-    with Pool(processes=5) as pool:
+    with Pool(processes=7) as pool:
         pool.map(parser, max_numbers)
 
