@@ -5,7 +5,7 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/analysis/RGAN" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/tensorflow-lstm-sin-master" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pytorch" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/analysis/pytorch_jyj" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
