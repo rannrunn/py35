@@ -27,7 +27,7 @@ import copy
 experiment_id = './experiments_test_RVAE_sine_SRNN_new_RVAE_concatenated_HS_short_callable'
  
 ########################
-# SELECT RVAE WITH LOWER COST
+# SELECT rvae WITH LOWER COST
 ########################
 
 # Find the model that performed best in the validation set
