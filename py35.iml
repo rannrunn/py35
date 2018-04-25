@@ -3,9 +3,10 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/source_analysis/rgan" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source_analysis/RGAN" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/tensorflow-lstm-sin-master" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/source_analysis/pytorch_jyj" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source_test/pytorch-generative-model-collections" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source_analysis/pytorch_koo/gan/LSGAN" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
