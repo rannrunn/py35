@@ -1,14 +1,10 @@
 import utils, torch, time, os, pickle
 import numpy as np
-np.set_printoptions(threshold=np.nan)
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-
-
-import time
 
 class generator(nn.Module):
     # Network Architecture is exactly same as in infoGAN (https://arxiv.org/abs/1606.03657)
@@ -34,12 +30,10 @@ class generator(nn.Module):
             nn.BatchNorm1d(128 * (self.input_height // 4) * (self.input_width // 4)),
             nn.ReLU(),
         )
-        self.deconv1 = nn.Sequential(
+        self.deconv = nn.Sequential(
             nn.ConvTranspose2d(128, 64, 4, 2, 1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-        )
-        self.deconv2 = nn.Sequential(
             nn.ConvTranspose2d(64, self.output_dim, 4, 2, 1),
             nn.Sigmoid(),
         )
@@ -48,8 +42,7 @@ class generator(nn.Module):
     def forward(self, input):
         x = self.fc(input)
         x = x.view(-1, 128, (self.input_height // 4), (self.input_width // 4))
-        x = self.deconv1(x)
-        x = self.deconv2(x)
+        x = self.deconv(x)
 
         return x
 
@@ -175,8 +168,6 @@ class GAN(object):
                 else:
                     x_, z_ = Variable(x_), Variable(z_)
 
-
-
                 # update D network
                 self.D_optimizer.zero_grad()
 
@@ -188,12 +179,10 @@ class GAN(object):
                 D_fake_loss = self.BCE_loss(D_fake, self.y_fake_)
 
                 D_loss = D_real_loss + D_fake_loss
-                print('D_loss.data:', D_loss.data)
                 self.train_hist['D_loss'].append(D_loss.data[0])
 
                 D_loss.backward()
-                if iter % 2 == 0:
-                    self.D_optimizer.step()
+                self.D_optimizer.step()
 
                 # update G network
                 self.G_optimizer.zero_grad()
@@ -206,14 +195,9 @@ class GAN(object):
                 G_loss.backward()
                 self.G_optimizer.step()
 
-                # print(x_.data)
-                # print(G_.data)
-
-                # time.sleep(1000)
-
                 if ((iter + 1) % 100) == 0:
-                    print("Epoch: [%2d] [%4d/%4d] D_real_loss: %.8f,D_fake_loss: %.8f,D_loss: %.8f, G_loss: %.8f" %
-                          ((epoch + 1), (iter + 1), self.data_loader.dataset.__len__() // self.batch_size, D_real_loss.data[0], D_fake_loss.data[0], D_loss.data[0], G_loss.data[0]))
+                    print("Epoch: [%2d] [%4d/%4d] D_loss: %.8f, G_loss: %.8f" %
+                          ((epoch + 1), (iter + 1), self.data_loader.dataset.__len__() // self.batch_size, D_loss.data[0], G_loss.data[0]))
 
             self.train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
             self.visualize_results((epoch+1))

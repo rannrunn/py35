@@ -28,7 +28,7 @@ class generator(nn.Module):
     def __init__(self):
         super(generator, self).__init__()
         self.fc1 = nn.Sequential(
-            nn.Linear(62, 128),
+            nn.Linear(64, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
         )
@@ -38,13 +38,14 @@ class generator(nn.Module):
             nn.ReLU(),
         )
         self.fc3 = nn.Sequential(
-            nn.Linear(256, 784),
+            nn.Linear(256, 2048),
             nn.Tanh()
         )
     def forward(self, x):
         out = self.fc1(x)
         out = self.fc2(out)
         out = self.fc3(out)
+        out = out.view(-1, 1024, 2)
         return out
 
 
@@ -52,7 +53,7 @@ class discriminator(nn.Module):
     def __init__(self):
         super(discriminator, self).__init__()
         self.fc1 = nn.Sequential(
-            nn.Linear(784, 256),
+            nn.Linear(2048, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
         )
@@ -80,17 +81,22 @@ def print_metric(d_model, real_data_, gen_data_):
 if __name__ == "__main__":
     # --- data --- #
     # 1) normal: unimodal
-    dim = 784
-    g_input_dim = 62
+    dim_1 = 1024
+    dim_2 = 2
+    g_input_dim = 64
     epochs, d_epochs, g_epochs = 1000, 1, 1
     batch_size = 2
     total_batch = 1
-    data = torch.randn(batch_size, dim)
+    data = torch.randn(batch_size, dim_1, dim_2)
     data = Variable(data, requires_grad=False).type(torch.FloatTensor)
 
     # --- generator & discriminator --- #
     G = generator()
     D = discriminator()
+
+    if torch.cuda.is_available():
+        D.cuda()
+        G.cuda()
 
     # --- optimizer --- #
     learning_rate = 0.0003
@@ -99,13 +105,7 @@ if __name__ == "__main__":
 
     # --- parameters --- #
 
-
-    print('n_row', dim)
     print('total_batch', total_batch)
-
-    if torch.cuda.is_available():
-        D.cuda()
-        G.cuda()
 
     d_probs = [None for _ in range(epochs)]
     g_probs = [None for _ in range(epochs)]
@@ -162,13 +162,12 @@ if __name__ == "__main__":
             print('d_error_mean:', d_error.data[0])
             print('g_error:', g_error.data[0])
             # plot_gan_result(data, gen_data)
-            #plt.plot(np.asarray(x_data.data)[0], np.asarray(x_data.data)[1], '*')
+            plt.plot(np.asarray(x_data.data)[0], np.asarray(x_data.data)[1], '*')
             plt.plot(np.asarray(gen_data.data)[0], np.asarray(gen_data.data)[1], '^')
             plt.show()
         print('mean', torch.mean(D(real_data).data))
         d_probs[epoch] = round(torch.mean(D(real_data).data), 3)
         g_probs[epoch] = round(torch.mean(D(gen_data).data), 3)
-
 
 
 # --- plot --- #
