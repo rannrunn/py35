@@ -81,6 +81,8 @@ if __name__ == "__main__":
     data = torch.randn([n_row, dim])
     data = Variable(data, requires_grad=False).type(torch.FloatTensor)
 
+    print(data)
+
     # --- generator & discriminator --- #
     g_input_size = 2
     G = generator([g_input_size, 10, 10, 2])
