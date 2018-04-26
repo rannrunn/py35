@@ -2292,6 +2292,7 @@ def selectPoleSensor(tb, pole_id, sensor_id):
                 FROM %s
                 WHERE POLE_ID = '%s'
                 AND SENSOR_OID = '%s'
+                ORDER BY TIME_ID ASC
                 """ % (tb, pole_id, sensor_id)
     cur.execute(query);
     results = cur.fetchall()

@@ -16,20 +16,18 @@ key_con = ["accero","pole","temp","humi","pitch","roll","ambient","uv","press","
 key_accero = ["pitch","roll","current","shock"]
 
 # dictionary 초기화
-dict_initial = {'data_seq':None,'file_name':None,'time_id':None,'sensor_id':None,'sensor_oid':None,'pole_id':None,'part_name':None,'ri':None,'pi':None,'temp':None,'humi':None,'pitch':None,'roll':None,'ambient':None,'uv':None,'press':None,'battery':None,'period':None,'current':None,'shock':None,'geomag_x':None,'geomag_y':None,'geomag_z':None,'var_x':None,'var_y':None,'var_z':None,'usn':None,'ntc':None,'uvc':None}
-list_dict_key = ['data_seq','file_name','time_id','sensor_id','sensor_oid','pole_id','part_name','ri','pi','temp','humi','pitch','roll','ambient','uv','press','battery','period','current','shock','geomag_x','geomag_y','geomag_z','var_x','var_y','var_z','usn','ntc','uvc']
+dict_initial = {'data_seq':None,'file_name':None,'time_id':None,'sensor_id':None,'sensor_oid':None,'relative_coordinate':None,'pole_id':None,'part_name':None,'ri':None,'pi':None,'temp':None,'humi':None,'pitch':None,'roll':None,'ambient':None,'uv':None,'press':None,'battery':None,'period':None,'current':None,'shock':None,'geomag_x':None,'geomag_y':None,'geomag_z':None,'var_x':None,'var_y':None,'var_z':None,'usn':None,'ntc':None,'uvc':None}
+list_dict_key = ['data_seq','file_name','time_id','sensor_id','sensor_oid','relative_coordinate','pole_id','part_name','ri','pi','temp','humi','pitch','roll','ambient','uv','press','battery','period','current','shock','geomag_x','geomag_y','geomag_z','var_x','var_y','var_z','usn','ntc','uvc']
 columns = ','.join(list_dict_key)
 #len(list_dict_key)
 
 print('print:', len(list_dict_key))
 
 # 테이블명
-table = 'NT_SENSOR_XML_4' #Insert 행을 넣어줄 DB_Table명
-query_insert_1 = "insert into NT_SENSOR_XML_1(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-query_insert_4 = "insert into NT_SENSOR_XML_4(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-query_insert_6 = "insert into NT_SENSOR_XML_6(" + columns + ") values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-
-print(query_insert_1)
+query_insert_1 = "insert into NT_SENSOR_XML_DB_1(" + columns + ") values (%s,%s,DATE_ADD(%s, INTERVAL 9 HOUR),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+query_insert_4 = "insert into NT_SENSOR_XML_DB_4(" + columns + ") values (%s,%s,DATE_ADD(%s, INTERVAL 9 HOUR),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+query_insert_6 = "insert into NT_SENSOR_XML_DB_6(" + columns + ") values (%s,%s,DATE_ADD(%s, INTERVAL 9 HOUR),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+query_insert_etc = "insert into NT_SENSOR_XML_DB_ETC(" + columns + ") values (%s,%s,DATE_ADD(%s, INTERVAL 9 HOUR),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 
 # DB 에 여러개 데이터를 한번에 인서트 하기 위한 list 생성
@@ -37,11 +35,11 @@ def make_values_list(values_list, dict):
     values_list.append(tuple([dict[item] for item in list_dict_key]))
     return values_list
 
-def insert_execute(query_insert, values_list):
+def c_insert_execute(query_insert, values_list):
     pass
 
 # 한번에 insert
-def c_insert_execute(query_insert, values_list):
+def insert_execute(query_insert, values_list):
     con = MySQLdb.connect('192.168.0.7', 'root', '1111', 'SFIOT')
     con.set_character_set('utf8')
     cur = con.cursor(MySQLdb.cursors.DictCursor)
@@ -49,10 +47,6 @@ def c_insert_execute(query_insert, values_list):
     cur.execute('SET CHARACTER SET utf8;')
     cur.execute('SET character_set_connection=utf8;')
     cur.executemany(query_insert, values_list)
-    # try:
-    #     cur.executemany(query_insert, values_list)
-    # except Exception as e:
-    #     print(values_list)
     con.commit()
 
 def parser(limit_number):
@@ -62,7 +56,6 @@ def parser(limit_number):
     conn = pymysql.connect(host='192.168.0.7', user='root', password='1111', db='KEPIOT', charset='utf8')
     curs = conn.cursor(pymysql.cursors.DictCursor) # DictCursor: row 결과를 dictionary 형태로 반환
 
-    flag = 0 # break 조건
 
     num1 = (limit_number * 10000) - 4999999
     num2 = (limit_number * 10000) - 4999999 + 9999
@@ -73,10 +66,11 @@ def parser(limit_number):
     values_list_1 = []
     values_list_4 = []
     values_list_6 = []
+    values_list_etc = []
     start = time.time()
 
     file_name = 'NT_SENSOR_XML_parser_error_log.txt'
-    file_path = 'F:/' + file_name
+    file_path = '/mnt/sdc1' + file_name
     out = open(file_path, 'w', encoding='UTF8')
 
     while num2 <= max_number:
@@ -94,15 +88,11 @@ def parser(limit_number):
             result = curs.fetchone() # fetchall: data를 한번에 가져옴, fetchone: 하나의 row만 가져옴, fetchmany(n): n개만큼의 데이타를 가져옴
 
             try:
-                line = result['XML_DATA']
-            except TypeError:
-                print("읽을 자료 없음")
-                flag = 1
-                break
-
-            try:
 
                 cnt += 1
+                row_cnt += 1
+
+                line = result['XML_DATA']
 
                 #dict와 result 변수 mapping
                 dict = copy.deepcopy(dict_initial)
@@ -112,7 +102,8 @@ def parser(limit_number):
                 dict['time_id'] = result['DATA_GROUP_NO']
                 dict['sensor_id'] = result['SENSOR_ID']
                 dict['sensor_oid'] = result['SENSOR_OID']
-                dict["pole_id"] = '' # 폴아이디가 존재하지 않는 차수가 있어 일단 빈값을 넣고 추후에 업데이트
+                dict['relative_coordinate'] = None 
+                dict["pole_id"] = None # 폴아이디가 존재하지 않는 차수가 있어 일단 빈값을 넣고 추후에 업데이트
                 dict["part_name"] = None
 
                 company_id = dict['sensor_oid'][10:11]
@@ -139,13 +130,6 @@ def parser(limit_number):
                         else:
                             dict[key] = json_all["m2m:cin"][key]
 
-                # print(json_all["m2m:cin"]["con"])
-                # try:
-                #     if bool(json_all["m2m:cin"]["con"]):
-                #         json_con = json.loads(json_all["m2m:cin"]["con"].replace("\"\"temp\"", "\",\"temp\""))
-                # except:
-                #     if bool(json_all["m2m:cin"]["con"]):
-                #         json_con = json.loads(json_all["m2m:cin"]["con"].replace("\"temp\"", "\",\"temp\""))
 
                 try:
                     str_con = json_all["m2m:cin"]["con"]
@@ -153,10 +137,25 @@ def parser(limit_number):
                 except Exception as e:
                     if re.findall(r'"(\d+)"temp"', str_con) != None:
                         str_con = re.sub(r'"(\d+)"temp"', r'"\1","temp"', str_con)
+                    if re.findall(r'"var":",', str_con) != None:
+                        str_con = re.sub(r'"var":",', r'"var":"",', str_con)
+                    if re.findall(r'"longitude":",', str_con) != None:
+                        str_con = re.sub(r'"longitude":",', r'"longitude":"",', str_con)
+                    if re.findall(r'"altitude":"}', str_con) != None:
+                        str_con = re.sub(r'"altitude":"}', r'"altitude":""}', str_con)
+                    if re.findall(r'"battery":",', str_con) != None:
+                        str_con = re.sub(r'"battery":",', r'"battery":"",', str_con)
+                    if re.findall(r'{":"}', str_con) != None:
+                        str_con = re.sub(r'{":"}', r'{"":""}', str_con)
+                    if re.findall(r'"latitude":",', str_con) != None:
+                        str_con = re.sub(r'"latitude":",', r'"latitude":"",', str_con)
+
                     try:
                         json_con = json.loads(str_con)
                     except Exception as e:
                         print(str_con)
+                        json_con = json.loads(str_con) 
+                        
 
                 # con 이 있을 경우 탐색
                 if bool_con:
@@ -181,25 +180,27 @@ def parser(limit_number):
                     values_list_4 = make_values_list(values_list_4, dict)
                 elif company_id == '6':
                     values_list_6 = make_values_list(values_list_6, dict)
-                row_cnt += 1
+                else:
+                    values_list_etc = make_values_list(values_list_etc, dict)
+
+
+            except Exception as e:
+                pass
+
+            finally:
+
                 # cnt_batch의 개수에 도달했을 때 한꺼번에 insert
                 if row_cnt % cnt_batch == 0:
                     insert_execute(query_insert_1, values_list_1)
                     insert_execute(query_insert_4, values_list_4)
                     insert_execute(query_insert_6, values_list_6)
+                    insert_execute(query_insert_etc, values_list_etc)
                     values_list_1 = []
                     values_list_4 = []
                     values_list_6 = []
+                    values_list_etc = []
                     print("cnt:", cnt, " , past_time:", (time.time() - start))
 
-            except Exception as e:
-                out.write(values_list_1)
-                out.write(values_list_4)
-                out.write(values_list_6)
-                break
-
-        if flag == 1:
-            break
 
         num1 += cnt_batch
         num2 += cnt_batch
@@ -209,6 +210,7 @@ def parser(limit_number):
         insert_execute(query_insert_1, values_list_1)
         insert_execute(query_insert_4, values_list_4)
         insert_execute(query_insert_6, values_list_6)
+        insert_execute(query_insert_etc, values_list_etc)
         print("cnt:", cnt, " , Total Time:", (time.time() - start))
 
     conn.close()
@@ -217,6 +219,6 @@ def parser(limit_number):
 if __name__ == '__main__':
 
     max_numbers = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
-    with Pool(processes=7) as pool:
+    with Pool(processes=10) as pool:
         pool.map(parser, max_numbers)
 

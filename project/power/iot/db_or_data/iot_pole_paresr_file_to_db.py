@@ -39,8 +39,9 @@ def make_values_list(values_list, dict):
 
 # 한번에 insert
 def insert_execute(con, cur, query_insert, values_list):
-    cur.executemany(query_insert, values_list)
-    con.commit()
+    pass
+    # cur.executemany(query_insert, values_list)
+    # con.commit()
 
 def parser(file_name):
 
@@ -189,7 +190,7 @@ def parser(file_name):
 
 if __name__ == '__main__':
 
-    path = "F:/DATA"
+    path = "/mnt/external/"
     list_file = []
     for path, dir, filenames in os.walk(path):
         for item in filenames:
