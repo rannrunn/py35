@@ -45,7 +45,6 @@ class generator(nn.Module):
         out = self.fc1(x)
         out = self.fc2(out)
         out = self.fc3(out)
-        out = out.view(-1, 1024, 2)
         return out
 
 
@@ -85,9 +84,10 @@ if __name__ == "__main__":
     dim_2 = 2
     g_input_dim = 64
     epochs, d_epochs, g_epochs = 1000, 1, 1
+    n_row = 2
     batch_size = 2
-    total_batch = 1
-    data = torch.randn(batch_size, dim_1, dim_2)
+    total_batch = n_row // batch_size
+    data = torch.randn(n_row, dim_1, dim_2)
     data = Variable(data, requires_grad=False).type(torch.FloatTensor)
 
     # --- generator & discriminator --- #
@@ -114,8 +114,8 @@ if __name__ == "__main__":
         # x_data = data[np.random.choice(n_row, size=n_row, replace=False), :]  # shuffle
         x_data = data
 
-        # for item in xdata:
-        #     print(item)
+        for item in x_data:
+            print(item)
 
         for d_epoch in range(d_epochs):
             for batch_idx in range(total_batch):
