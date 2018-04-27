@@ -40,14 +40,14 @@ G = generator().cuda()
 D = discriminator().cuda()
 
 
-epochs = 1000
-data_size = 3000;
-batch_size = 300;
+epochs = 5000
+data_size = 1000;
+batch_size = 100;
 data_dim = 2;
 
 
-lrD = 0.001
-lrG = 0.001
+lrD = 0.0002
+lrG = 0.0002
 beta1 = 0.5
 beta2 = 0.999
 g_optimizer = torch.optim.Adam(G.parameters(), lr=lrG, betas=(beta1, beta2))
@@ -55,8 +55,8 @@ d_optimizer = torch.optim.Adam(D.parameters(), lr=lrG, betas=(beta1, beta2))
 
 y_real_, y_fake_ = Variable(torch.ones(batch_size, 1).cuda()), Variable(torch.zeros(batch_size, 1).cuda())
 
-bceloss = nn.BCELoss()
-mseloss = nn.MSELoss()
+bceloss = nn.BCELoss().cuda()
+mseloss = nn.MSELoss().cuda()
 
 
 data = Variable(torch.randn([data_size, data_dim])).cuda()
@@ -81,8 +81,8 @@ for epoch in range(epochs):
 
         generation_data = G(z_)
         d_optimizer.zero_grad()
-        d_real_loss = mseloss(D(batch_data), y_real_)
-        d_fake_loss = mseloss(D(generation_data), y_fake_)
+        d_real_loss = bceloss(D(batch_data), y_real_)
+        d_fake_loss = bceloss(D(generation_data), y_fake_)
         d_loss = d_real_loss + d_fake_loss
         d_loss.backward(retain_graph=True)
 
@@ -95,7 +95,7 @@ for epoch in range(epochs):
 
         generation_data = G(z_)
         g_optimizer.zero_grad()
-        g_loss = mseloss(D(generation_data), y_real_)
+        g_loss = bceloss(D(generation_data), y_real_)
         g_loss.backward(retain_graph=True)
 
         g_optimizer.step()
@@ -106,10 +106,14 @@ for epoch in range(epochs):
             g_vars = torch.cat([g_vars, generation_data])
 
 
+
+
     if (epoch + 1) % 20 == 0:
         print('Epoch: [%d/%d] DRealLoss: %.4f, DFakeLoss: %.4f, DLoss: %.4f, GLoss: %.4f'
               % (epoch + 1, epochs, d_real_loss.data[0], d_fake_loss.data[0], d_loss.data[0], g_loss.data[0]))
         plt.scatter(data.cpu().data.numpy()[:, :1], data.cpu().data.numpy()[:, 1:2], color='yellow', marker= '*')
         plt.scatter(g_vars.cpu().data.numpy()[:, :1], g_vars.cpu().data.numpy()[:, 1:2], color='green', marker='^')
         plt.show()
+        print('g_vars.mean():',g_vars.mean())
+        print('d_vars.std():',g_vars.std())
 
