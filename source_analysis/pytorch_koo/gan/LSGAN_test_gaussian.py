@@ -24,52 +24,48 @@ def plot_gan_result(data, gen_data):
     # plt.show()
 
 
-class generator(nn.Module):
-    def __init__(self):
-        super(generator, self).__init__()
-        self.fc1 = nn.Sequential(
-            nn.Linear(64, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-        )
-        self.fc2 = nn.Sequential(
-            nn.Linear(128, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-        )
-        self.fc3 = nn.Sequential(
-            nn.Linear(256, 2048),
-            nn.Tanh()
-        )
-    def forward(self, x):
-        out = self.fc1(x)
-        out = self.fc2(out)
-        out = self.fc3(out)
-        return out
+def generator(layers_):
+    legos = []
+    for idx in range(len(layers_) - 1):
+        in_n = layers_[idx]
+        out_n = layers_[idx + 1]
+
+        # linear sum
+        legos.append(nn.Linear(in_n, out_n))
+
+        if idx != (len(layers_) - 2):  # range: -1 & in_n: -1, therefore: -2
+            # act. func.
+            legos.append(nn.Dropout(p=0))
+            legos.append(nn.BatchNorm1d(out_n))
+            legos.append(nn.LeakyReLU(0.2))
+
+    # output layer
+    legos.append(nn.Tanh())
+
+    _model = nn.Sequential(*legos)
+    return _model
 
 
-class discriminator(nn.Module):
-    def __init__(self):
-        super(discriminator, self).__init__()
-        self.fc1 = nn.Sequential(
-            nn.Linear(2048, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-        )
-        self.fc2 = nn.Sequential(
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-        )
-        self.fc3 = nn.Sequential(
-            nn.Linear(128, 1),
-            nn.Sigmoid()
-        )
-    def forward(self, x):
-        out = self.fc1(x)
-        out = self.fc2(out)
-        out = self.fc3(out)
-        return out
+def discriminator(layers_):
+    legos = []
+    for idx in range(len(layers_) - 1):
+        in_n = layers_[idx]
+        out_n = layers_[idx + 1]
+
+        # linear sum
+        legos.append(nn.Linear(in_n, out_n))
+
+        if idx != (len(layers_) - 2):  # range: -1 & in_n: -1, therefore: -2
+            # act. func.
+            legos.append(nn.Dropout(p=0))
+            legos.append(nn.BatchNorm1d(out_n))
+            legos.append(nn.LeakyReLU(0.2))
+
+    # output layer
+    legos.append(nn.Sigmoid())
+
+    _model = nn.Sequential(*legos)
+    return _model
 
 
 def print_metric(d_model, real_data_, gen_data_):
@@ -80,23 +76,15 @@ def print_metric(d_model, real_data_, gen_data_):
 if __name__ == "__main__":
     # --- data --- #
     # 1) normal: unimodal
-    dim_1 = 1024
-    dim_2 = 2
-    g_input_dim = 64
-    epochs, d_epochs, g_epochs = 1000, 1, 1
-    n_row = 2
-    batch_size = 2
-    total_batch = n_row // batch_size
-    data = torch.randn(n_row, dim_1, dim_2)
+    n_row = 3000
+    dim = 2
+    data = torch.randn([n_row, dim])
     data = Variable(data, requires_grad=False).type(torch.FloatTensor)
 
     # --- generator & discriminator --- #
-    G = generator()
-    D = discriminator()
-
-    if torch.cuda.is_available():
-        D.cuda()
-        G.cuda()
+    g_input_size = 2
+    G = generator([g_input_size, 10, 10, 2])
+    D = discriminator([2, 10, 10, 1])
 
     # --- optimizer --- #
     learning_rate = 0.0003
@@ -104,35 +92,33 @@ if __name__ == "__main__":
     g_optimizer = optim.Adam(G.parameters(), lr=learning_rate)
 
     # --- parameters --- #
+    epochs, d_epochs, g_epochs = 10, 1, 1
+    n_row = data.size()[0]
+    batch_size = 100
+    total_batch = n_row // batch_size
 
-    print('total_batch', total_batch)
+    if torch.cuda.is_available():
+        D.cuda()
+        G.cuda()
 
     d_probs = [None for _ in range(epochs)]
     g_probs = [None for _ in range(epochs)]
 
     for epoch in tqdm(range(epochs)):
-        # x_data = data[np.random.choice(n_row, size=n_row, replace=False), :]  # shuffle
-        x_data = data
-
-        for item in x_data:
-            print(item)
+        data = data[np.random.choice(n_row, size=n_row, replace=False), :]  # shuffle
 
         for d_epoch in range(d_epochs):
             for batch_idx in range(total_batch):
                 # make generated data
-                z_noise = torch.randn([batch_size, g_input_dim])
+                z_noise = torch.randn([batch_size, dim])
                 z_noise = Variable(z_noise, requires_grad=False).type(torch.FloatTensor).cuda()
                 gen_data = G(z_noise)
-                real_data = x_data[(batch_size * batch_idx):(batch_size * (batch_idx + 1)), :]
+                real_data = data[(batch_size * batch_idx):(batch_size * (batch_idx+1)), :]
                 real_data = real_data.cuda()
 
-
-                d_error_1 = (1/2)*((D(real_data)-1)**2)
-                d_error_2 = (1/2)*((D(gen_data)-0)**2)
-                d_error_1_mean = torch.mean(d_error_1)
-                d_error_2_mean = torch.mean(d_error_2)
-                d_error =  d_error_1 + d_error_2
+                d_error = (1/2)*((D(real_data)-1)**2) + (1/2)*((D(gen_data)-0)**2)
                 d_error = torch.mean(d_error)
+
                 D.zero_grad()
                 d_error.backward()
                 d_optimizer.step()
@@ -140,32 +126,24 @@ if __name__ == "__main__":
         for g_epoch in range(g_epochs):
             for batch_idx in range(total_batch):
                 # make generated data
-                z_noise = torch.randn([batch_size, g_input_dim])
+                z_noise = torch.randn([batch_size, dim])
                 z_noise = Variable(z_noise, requires_grad=False).type(torch.FloatTensor).cuda()
                 gen_data = G(z_noise)
 
-                g_error = (1/2)*((D(gen_data)-1)**2)
+                g_error_tmp = (1/2)*((D(gen_data)-1)**2)
 
-                g_error = torch.mean(g_error)
+                g_error = torch.mean(g_error_tmp)
 
                 G.zero_grad()
                 D.zero_grad()
                 g_error.backward()
                 g_optimizer.step()
 
-        if (epoch + 1) % 100 == 0:
+        if epoch % 1 == 0:
             print_metric(D, real_data, gen_data)
             print("\n\nD prob: ", round(torch.mean(D(real_data).data), 3))
             print("G prob: ", round(torch.mean(D(gen_data).data), 3))
-            print('d_error_1_mean:', d_error_1_mean.data[0])
-            print('d_error_2_mean:', d_error_2_mean.data[0])
-            print('d_error_mean:', d_error.data[0])
-            print('g_error:', g_error.data[0])
-            # plot_gan_result(data, gen_data)
-            plt.plot(np.asarray(x_data.data)[0], np.asarray(x_data.data)[1], '*')
-            plt.plot(np.asarray(gen_data.data)[0], np.asarray(gen_data.data)[1], '^')
-            plt.show()
-        print('mean', torch.mean(D(real_data).data))
+
         d_probs[epoch] = round(torch.mean(D(real_data).data), 3)
         g_probs[epoch] = round(torch.mean(D(gen_data).data), 3)
 
@@ -173,6 +151,9 @@ if __name__ == "__main__":
 # --- plot --- #
 plt.plot(d_probs, 'r')
 plt.plot(g_probs, 'b')
+plt.show()
+
+plot_gan_result(data, gen_data)
 plt.show()
 
 
