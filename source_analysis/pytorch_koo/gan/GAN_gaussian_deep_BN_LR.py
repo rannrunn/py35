@@ -21,6 +21,7 @@ def generator():
 def discriminator():
     return nn.Sequential(
         nn.Linear(2, 32),
+        nn.BatchNorm1d(32),
         nn.LeakyReLU(0.2),
         nn.Linear(32, 32),
         nn.BatchNorm1d(32),
