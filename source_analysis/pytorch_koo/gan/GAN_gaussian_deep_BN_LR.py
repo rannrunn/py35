@@ -70,7 +70,7 @@ matrix_scale = (axis_length * 20) + 1
 ndarray_2dim = np.mgrid[axis_min:axis_max:0.1, axis_min:axis_max:0.1].reshape(2, -1).T
 ndarray_1dim = np.arange(axis_min, axis_max, 0.1)
 
-contour_line_draw_value = 3
+contour_line_distance_value = 3
 
 # 학습
 for epoch in range(epochs):
@@ -198,8 +198,8 @@ for epoch in range(epochs):
         # 올바르게 행렬연산을 하였는지 체크
         # check_matrix = D(Variable(torch.FloatTensor([[-4, -4], [-4, 4], [0, 0], [4, -4], [4, 4]])).cuda())
         # print(check_matrix)
-        plt.contourf(ndarray_1dim, ndarray_1dim, d_after, contour_line_draw_value, alpha=.75, cmap='jet')
-        C = plt.contour(ndarray_1dim, ndarray_1dim, d_after, contour_line_draw_value, colors='black', linewidth=0.5)
+        plt.contourf(ndarray_1dim, ndarray_1dim, d_after, contour_line_distance_value, alpha=.75, cmap='jet')
+        C = plt.contour(ndarray_1dim, ndarray_1dim, d_after, contour_line_distance_value, colors='black', linewidth=0.5)
         plt.clabel(C, inline=1, fontsize=10)
         plt.scatter(data.cpu().data.numpy()[:, :1], data.cpu().data.numpy()[:, 1:2], color='yellow', marker= '*', label='RealData')
         plt.scatter(z_.cpu().data.numpy()[:, :1], z_.cpu().data.numpy()[:, 1:2], color='purple', marker='+', label='Z_Data')
