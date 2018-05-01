@@ -2,26 +2,30 @@
 
 import torch
 import torch.nn as nn
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from torch.autograd import Variable
 import numpy as np
 np.set_printoptions(threshold=np.nan)
+import time
 
 # 제너레이터 모델
 def generator():
     return nn.Sequential(
-        nn.Linear(2, 2)
+        nn.Linear(2, 16),
+        nn.LeakyReLU(0.2),
+        nn.Linear(16, 16),
+        nn.LeakyReLU(0.2),
+        nn.Linear(16, 2)
     )
 
 # 디스크리미네이터 모델
 def discriminator():
     return nn.Sequential(
-        nn.Linear(2, 16),
+        nn.Linear(2, 128),
         nn.LeakyReLU(0.2),
-        nn.Linear(16, 1),
+        nn.Linear(128, 10),
+        nn.LeakyReLU(0.2),
+        nn.Linear(10, 1),
         nn.Sigmoid()
     )
 
@@ -30,9 +34,9 @@ G = generator().cuda()
 D = discriminator().cuda()
 
 # 파라미터
-epochs = 500
-data_size = 3000;
-batch_size = 300;
+epochs = 5000
+data_size = 100;
+mini_batch_size = 2;
 data_dim = 2;
 
 # 옵티마이저
@@ -44,7 +48,7 @@ g_optimizer = torch.optim.Adam(G.parameters(), lr=lrG, betas=(beta1, beta2))
 d_optimizer = torch.optim.Adam(D.parameters(), lr=lrG, betas=(beta1, beta2))
 
 # 손실 계산 시 사용되는 인자 : 1, 0
-y_real_, y_fake_ = Variable(torch.ones(batch_size, 1).cuda()), Variable(torch.zeros(batch_size, 1).cuda())
+y_real_, y_fake_ = Variable(torch.ones(mini_batch_size, 1).cuda()), Variable(torch.zeros(mini_batch_size, 1).cuda())
 
 # 손실함수 : Binary Cross Entory
 bceloss = nn.BCELoss().cuda()
@@ -63,12 +67,12 @@ for epoch in range(epochs):
     g_epoch_data = Variable(torch.FloatTensor()).cuda()
 
     # 디스크리미네이터
-    for i in range(0, data_size, batch_size):
+    for i in range(0, data_size, mini_batch_size):
 
         # 배치 학습 시 사용되는 실제 데이터를 가져옴
-        r_batch_data = data[i:i + batch_size]
+        r_batch_data = data[i:i + mini_batch_size]
         # 배치 학습 시 사용되는 랜덤 데이터 생성
-        z_ = Variable(torch.randn([batch_size, data_dim])).cuda()
+        z_ = Variable(torch.randn([mini_batch_size, data_dim])).cuda()
 
         # 1. 디스크리미네이터가 학습할 가짜 데이터를 제너레이터를 통해 생성
         # 2. 기울기를 초기화
@@ -85,10 +89,10 @@ for epoch in range(epochs):
         d_optimizer.step()
 
     # 제너레이터
-    for i in range(0, data_size, batch_size):
+    for i in range(0, data_size, mini_batch_size):
 
         # 배치할습 시 사용되는 랜덤 데이터 생성
-        z_ = Variable(torch.randn([batch_size, data_dim])).cuda()
+        z_ = Variable(torch.randn([mini_batch_size, data_dim])).cuda()
 
         # 1. 제너레이터가 학습할 가짜 데이터를 생성
         # 2. 기울기를 초기화
@@ -106,64 +110,48 @@ for epoch in range(epochs):
         else:
             g_epoch_data = torch.cat([g_epoch_data, g_batch_data])
 
-    # 특정 에폭마다 손실 및 그림을 출력
-    if (epoch + 1) % 10 == 0:
+    # 특정 에폭마다 손실 및 이지미를 출력
+    if (epoch + 1) % 100 == 0:
+
+        # 평가를 위해 데이터 생성
+        eval_g_data = G(z_)
+
         print('Epoch: [%d/%d] DRealLoss: %.4f, DFakeLoss: %.4f, DLoss: %.4f, GLoss: %.4f'
               % (epoch + 1, epochs, d_real_loss.data[0], d_fake_loss.data[0], d_loss.data[0], g_loss.data[0]))
         plt.scatter(data.cpu().data.numpy()[:, :1], data.cpu().data.numpy()[:, 1:2], color='yellow', marker= '*', label='RealData')
         plt.scatter(g_epoch_data.cpu().data.numpy()[:, :1], g_epoch_data.cpu().data.numpy()[:, 1:2], color='green', marker='^', label='GenEpochData')
-        plt.scatter(g_batch_data.cpu().data.numpy()[:, :1], g_batch_data.cpu().data.numpy()[:, 1:2], color='red', marker='o', label='GenLastBatchData')
-        plt.scatter(z_.cpu().data.numpy()[:, :1], z_.cpu().data.numpy()[:, 1:2], color='purple', marker='+', label='Z_LastBatchData')
+        plt.scatter(eval_g_data.cpu().data.numpy()[:, :1], eval_g_data.cpu().data.numpy()[:, 1:2], color='red', marker='o', label='GenData')
+        plt.scatter(z_.cpu().data.numpy()[:, :1], z_.cpu().data.numpy()[:, 1:2], color='purple', marker='+', label='Z_Data')
         plt.legend()
         plt.title('Epoch: [%d/%d] DRealLoss: %.4f, DFakeLoss: %.4f, GLoss: %.4f'
                   % (epoch + 1, epochs, d_real_loss.data[0], d_fake_loss.data[0], g_loss.data[0]))
         plt.show()
         print('GEpochMean: %.4f, GEpochSTD: %.4f' % (g_epoch_data.mean(), g_epoch_data.std()))
 
-        list_data = np.arange(0, 81, 1)
-        d_prob = Variable(torch.rand([81, 81])).cuda()
-        list_result = []
-        for item_x in list_data:
-            for item_y in list_data:
-                x = (item_x - 40) / 10
-                y = (item_y - 40) / 10
-                d_prob[item_x, item_y] = D(Variable(torch.FloatTensor([x, y])).cuda())
+        axis_length = 16
+        axis_min = -1 * axis_length
+        axis_max = axis_length + 0.1
+        matrix_scale = (axis_length * 20) + 1
 
-        if epoch + 1 >= 1:
-            X = list_data
-            Y = list_data
-            Z = d_prob.cpu().data.numpy()
-            print(d_prob.cpu().data.numpy())
-            plt.contourf(d_prob.cpu().data.numpy(), alpha=.75, cmap='jet')
-            plt.contour(d_prob.cpu().data.numpy(), colors='black', linewidth=.5)
-            plt.show()
+        ndarray_2dim = np.mgrid[axis_min:axis_max:0.1, axis_min:axis_max:0.1].reshape(2, -1).T
+        ndarray_1dim = np.arange(axis_min, axis_max, 0.1)
+        d_prob = Variable(torch.rand([matrix_scale, matrix_scale])).cuda()
 
-            # set graph image size
-            fig = plt.figure(figsize=(8, 6), dpi=80)
-            ax = fig.gca(projection='3d')
+        d_prob = D(Variable(torch.FloatTensor(ndarray_2dim)).cuda()).cpu().data.numpy().reshape(matrix_scale, matrix_scale)
 
-            # Make data.
-            # X = np.arange(-5, 5, 0.25)
-            # Y = np.arange(-5, 5, 0.25)
-            # X, Y = np.meshgrid(X, Y)
-            # R = np.sqrt(X**2 + Y**2)
-            # Z = np.sin(R)
+        # 올바르게 행렬연산을 하였는지 체크
+        # check_matrix = D(Variable(torch.FloatTensor([[-4, -4], [-4, 4], [0, 0], [4, -4], [4, 4]])).cuda())
+        # print(check_matrix)
 
-            # Plot the surface.
-            surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                                   linewidth=0, antialiased=True)
-
-            # Customize the z axis.
-
-            ax.zaxis.set_major_locator(LinearLocator(10))
-            ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-
-            # Add a color bar which maps values to colors.
-            fig.colorbar(surf, shrink=0.5, aspect=5)
-
-            plt.show()
-
-            print(Z)
+        plt.contourf(ndarray_1dim, ndarray_1dim, d_prob, alpha=.75, cmap='jet')
+        C = plt.contour(ndarray_1dim, ndarray_1dim, d_prob, colors='black', linewidth=0.5)
+        plt.clabel(C, inline=1, fontsize=10)
+        plt.scatter(eval_g_data.cpu().data.numpy()[:, :1], eval_g_data.cpu().data.numpy()[:, 1:2], color='red', marker='o', label='GenData')
+        plt.scatter(z_.cpu().data.numpy()[:, :1], z_.cpu().data.numpy()[:, 1:2], color='purple', marker='+', label='Z_Data')
+        plt.legend()
+        plt.title('Epoch: [%d/%d] DRealLoss: %.4f, DFakeLoss: %.4f, GLoss: %.4f'
+                  % (epoch + 1, epochs, d_real_loss.data[0], d_fake_loss.data[0], g_loss.data[0]))
+        plt.show()
 
 
 
