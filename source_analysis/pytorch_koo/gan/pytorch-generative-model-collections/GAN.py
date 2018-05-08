@@ -238,6 +238,8 @@ class GAN(object):
         else:
             samples = samples.data.numpy().transpose(0, 2, 3, 1)
 
+        print(samples.shape)
+
         utils.save_images(samples[:image_frame_dim * image_frame_dim, :, :, :], [image_frame_dim, image_frame_dim],
                           self.result_dir + '/' + self.dataset + '/' + self.model_name + '/' + self.model_name + '_epoch%03d' % epoch + '.png')
 
