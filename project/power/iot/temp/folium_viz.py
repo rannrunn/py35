@@ -31,11 +31,11 @@ for idx in range(len(df)):
 
 
 # 맵에 행정구분별 구획을 설정하기 위해 행정구획 정보가 저장된 json 파일 로딩
-rfile = open('d:/skorea_provinces_geo_simple.json', 'r', encoding='euckr').read()
-jsonData = json.loads(rfile)
+# rfile = open('d:/skorea_provinces_geo_simple.json', 'r', encoding='euckr').read()
+# jsonData = json.loads(rfile)
 
 # 맵에 행정구분별 구획 설정
-folium.GeoJson(jsonData, name='json_data').add_to(map_osm)
+# folium.GeoJson(jsonData, name='json_data').add_to(map_osm)
 
 # 파일 저장 위치 설정
 map_osm.save('d:/map8.html')
