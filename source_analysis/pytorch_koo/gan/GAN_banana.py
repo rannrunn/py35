@@ -9,7 +9,7 @@ np.set_printoptions(threshold=np.nan)
 import pandas as pd
 import time
 
-df_banana = pd.read_csv('banana_shaped_data.csv')
+df_banana = pd.read_csv('c:/_data/banana_shaped_data.csv')
 banana = df_banana.values
 
 # 제너레이터 모델
