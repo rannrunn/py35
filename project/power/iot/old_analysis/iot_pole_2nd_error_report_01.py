@@ -19,7 +19,7 @@ list_part_data = [str(item)[0:10] for item in date_range_part.values]
 
 df_one['FLAG'] = 1
 zero_file_size = []
-pwd = "D:\\010_data\\kepco\\iot_pole\\2nd\\data"
+pwd = "D:\\010_자료\\001 프로젝트 관련 데이터\\kepco\\iot_pole\\2nd\\data"
 for path, dirs, files in os.walk(pwd):
     for file in files:
         file_stat = os.stat(os.path.join(path, file))
