@@ -8,7 +8,7 @@ from matplotlib import font_manager, rc
 import numpy as np
 import time
 
-font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/NGULIM.TTF").get_name()
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/맑은 고딕.ttf").get_name()
 rc('font', family=font_name)
 
 def get_list_from_location(df_sensor_info, location):
