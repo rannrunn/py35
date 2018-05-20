@@ -5,7 +5,7 @@ from multiprocessing import Pool
 
 def func(list_date):
 
-    df = pd.read_csv('./ev_2016_2017.csv', encoding='euckr')
+    df = pd.read_csv('C:\\_data\\ev_2016_2017.csv', encoding='euckr')
 
     df['시작일시'] = pd.to_datetime(df['시작일시'])
     mask = (df['시작일시'] >= list_date[0] + ' 00:00:00') & (df['시작일시'] <= list_date[1] + ' 23:59:59')
