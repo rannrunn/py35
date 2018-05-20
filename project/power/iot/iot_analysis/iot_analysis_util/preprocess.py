@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 
 # 센서 오작동 데이터 제거 : 제작사 코드가 1인 센서에서만 오작동 센서 데이터가 있었지만 전체 센서에 적용
@@ -36,36 +35,36 @@ def remove_sensor_malfunction_data(df):
 # 자외선-C : 0 ~ 5 (스펙상 0~5 사이이나 실제 5를 초과하는 데이터도 측정됨)
 def remove_out_of_range_data(df):
     if 'TEMP' in df.columns:
-        df = df['TEMP'].apply(lambda x: x if -40 <= x and x <= 125 else np.nan)
+        df['TEMP'] = df['TEMP'].apply(lambda x: x if -40 <= x and x <= 125 else np.nan)
     if 'HUMI' in df.columns:
-        df = df['HUMI'].apply(lambda x: x if 0 <= x and x <= 100 else np.nan)
+        df['HUMI'] = df['HUMI'].apply(lambda x: x if 0 <= x and x <= 100 else np.nan)
     if 'PITCH' in df.columns:
-        df = df['PITCH'].apply(lambda x: x if -180 <= x and x <= 180 else np.nan)
+        df['PITCH'] = df['PITCH'].apply(lambda x: x if -180 <= x and x <= 180 else np.nan)
     if 'ROLL' in df.columns:
-        df = df['ROLL'].apply(lambda x: x if -90 <= x and x <= 90 else np.nan)
+        df['ROLL'] = df['ROLL'].apply(lambda x: x if -90 <= x and x <= 90 else np.nan)
     if 'AMBIENT' in df.columns:
-        df = df['AMBIENT'].apply(lambda x: x if 0 <= x and x <= 60000 else np.nan)
+        df['AMBIENT'] = df['AMBIENT'].apply(lambda x: x if 0 <= x and x <= 60000 else np.nan)
     if 'UV' in df.columns:
-        df = df['UV'].apply(lambda x: x if 0 <= x and x <= 20.48 else np.nan)
+        df['UV'] = df['UV'].apply(lambda x: x if 0 <= x and x <= 20.48 else np.nan)
     if 'BATTERY' in df.columns:
-        df = df['BATTERY'].apply(lambda x: x if 0 <= x and x <= 100 else np.nan)
+        df['BATTERY'] = df['BATTERY'].apply(lambda x: x if 0 <= x and x <= 100 else np.nan)
     if 'GEOMAG_X' in df.columns:
-        df = df['GEOMAG_X'].apply(lambda x: x if -5000 <= x and x <= 5000 else np.nan)
+        df['GEOMAG_X'] = df['GEOMAG_X'].apply(lambda x: x if -5000 <= x and x <= 5000 else np.nan)
     if 'GEOMAG_Y' in df.columns:
-        df = df['GEOMAG_Y'].apply(lambda x: x if -5000 <= x and x <= 5000 else np.nan)
+        df['GEOMAG_Y'] = df['GEOMAG_Y'].apply(lambda x: x if -5000 <= x and x <= 5000 else np.nan)
     if 'GEOMAG_Z' in df.columns:
-        df = df['GEOMAG_Z'].apply(lambda x: x if -5000 <= x and x <= 5000 else np.nan)
+        df['GEOMAG_Z'] = df['GEOMAG_Z'].apply(lambda x: x if -5000 <= x and x <= 5000 else np.nan)
     if 'VAR_X' in df.columns:
-        df = df['VAR_X'].apply(lambda x: x if -16000 <= x and x <= 16000 else np.nan)
+        df['VAR_X'] = df['VAR_X'].apply(lambda x: x if -16000 <= x and x <= 16000 else np.nan)
     if 'VAR_Y' in df.columns:
-        df = df['VAR_Y'].apply(lambda x: x if -16000 <= x and x <= 16000 else np.nan)
+        df['VAR_Y'] = df['VAR_Y'].apply(lambda x: x if -16000 <= x and x <= 16000 else np.nan)
     if 'VAR_Z' in df.columns:
-        df = df['VAR_Z'].apply(lambda x: x if -16000 <= x and x <= 16000 else np.nan)
+        df['VAR_Z'] = df['VAR_Z'].apply(lambda x: x if -16000 <= x and x <= 16000 else np.nan)
     if 'USN' in df.columns:
-        df = df['USN'].apply(lambda x: x if 0 <= x and x <= 3000 else np.nan)
+        df['USN'] = df['USN'].apply(lambda x: x if 0 <= x and x <= 3000 else np.nan)
     if 'NTC' in df.columns:
-        df = df['NTC'].apply(lambda x: x if -20 <= x and x <= 120 else np.nan)
+        df['NTC'] = df['NTC'].apply(lambda x: x if -20 <= x and x <= 120 else np.nan)
     if 'UVC' in df.columns:
-        df = df['UVC'].apply(lambda x: x if 0 <= x and x <= 5 else np.nan)
+        df['UVC'] = df['UVC'].apply(lambda x: x if 0 <= x and x <= 5 else np.nan)
 
     return df

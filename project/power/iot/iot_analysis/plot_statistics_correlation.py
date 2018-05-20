@@ -8,6 +8,7 @@ from matplotlib import font_manager, rc
 import numpy as np
 import seaborn as sns
 import time
+from iot_analysis_util import preprocess as pre
 
 font_name = font_manager.FontProperties(fname="c:\\Windows\\Fonts\\NGULIM.TTF").get_name()
 rc('font', family=font_name)
@@ -71,6 +72,8 @@ def make_plot(dict):
     item_mounting_position = dict['item_mounting_position']
 
     df = pd.read_csv(file_path, encoding='euckr')
+    df = pre.remove_sensor_malfunction_data(df)
+    df = pre.remove_out_of_range_data(df)
     df.set_index('TIME_ID', inplace=True)
     df.index = pd.to_datetime(df.index)
     df.index.rename(file_path[file_path.rfind('_') + 1:file_path.rfind('.')], inplace=True)
