@@ -1,3 +1,22 @@
+import os
+
+
+def get_pole_id_from_path(file_path):
+    file_name = os.path.basename(file_path)
+    if file_name.find('_') + 1 == file_name.rfind('_'):
+        pole_id = ''
+    else:
+        pole_id = file_name[file_name.find('_') + 1:file_name.rfind('_')]
+
+    return pole_id
+
+
+def get_sensor_oid_from_path(file_path):
+    file_name = os.path.basename(file_path)
+    sensor_oid = file_name[file_name.rfind('_') + 1:file_name.rfind('.')]
+    return sensor_oid
+
+
 def get_list_from_location(df_sensor_info, location):
 
     if location == '고창':
@@ -33,6 +52,7 @@ def get_list_from_mounting_position(df_sensor_info, mounting_position):
 
     return list
 
+
 def get_list_from_manufacturer(df_sensor_info, manufacturer_number):
 
     if manufacturer_number == '1':
@@ -45,3 +65,4 @@ def get_list_from_manufacturer(df_sensor_info, manufacturer_number):
     list = df_sensor_info['SENSOR_OID'].tolist()
 
     return list
+

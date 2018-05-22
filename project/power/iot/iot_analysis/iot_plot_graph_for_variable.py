@@ -7,58 +7,11 @@ from multiprocessing import Pool
 from matplotlib import font_manager, rc
 import numpy as np
 import time
-from iot_util import iot_preprocess as pre
+import iot_util.iot_preprocess_for_analysis as pre
+import iot_util.iot_common as com
 
 font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/NGULIM.TTF").get_name()
 rc('font', family=font_name)
-
-def get_list_from_location(df_sensor_info, location):
-
-    if location == '고창':
-        df_sensor_info = df_sensor_info[df_sensor_info['POLE_ADDR'].str.contains('고창군')]
-    elif location == '광주':
-        df_sensor_info = df_sensor_info[df_sensor_info['POLE_ADDR'].str.contains('광주 광역시') | df_sensor_info['POLE_ADDR'].str.contains('광주센서')]
-    elif location == '대구':
-        df_sensor_info = df_sensor_info[df_sensor_info['POLE_ADDR'].str.contains('대구 광역시') | df_sensor_info['POLE_ADDR'].str.contains('대구센서')]
-    elif location == '대전':
-        df_sensor_info = df_sensor_info[df_sensor_info['POLE_ADDR'].str.contains('대전 광역시') | df_sensor_info['POLE_ADDR'].str.contains('대전센서')]
-    elif location == '안산':
-        df_sensor_info = df_sensor_info[df_sensor_info['POLE_ADDR'].str.contains('안산센서')]
-
-    list = df_sensor_info['FILE_NAME'].tolist()
-
-    return list
-
-
-def get_list_from_mounting_position(df_sensor_info, mounting_position):
-
-    if mounting_position == '변압기 본체':
-        df_sensor_info = df_sensor_info[df_sensor_info['MOUNTING_POSITION'].str.contains('변압기 본체')]
-    elif mounting_position == '부하 개폐기':
-        df_sensor_info = df_sensor_info[df_sensor_info['MOUNTING_POSITION'].str.contains('부하 개폐기')]
-    elif mounting_position == '완금':
-        df_sensor_info = df_sensor_info[df_sensor_info['MOUNTING_POSITION'].str.contains('완금')]
-    elif mounting_position == '전주':
-        df_sensor_info = df_sensor_info[df_sensor_info['MOUNTING_POSITION'].str.contains('전주')]
-    elif mounting_position == '통신용 함체':
-        df_sensor_info = df_sensor_info[df_sensor_info['MOUNTING_POSITION'].str.contains('통신용 함체')]
-
-    list = df_sensor_info['SENSOR_OID'].tolist()
-
-    return list
-
-def get_list_from_manufacturer(df_sensor_info, manufacturer_number):
-
-    if manufacturer_number == '1':
-        df_sensor_info = df_sensor_info[df_sensor_info['SENSOR_OID'].str.slice(10,11) == '1']
-    elif manufacturer_number == '4':
-        df_sensor_info = df_sensor_info[df_sensor_info['SENSOR_OID'].str.slice(10,11) == '4']
-    elif manufacturer_number == '6':
-        df_sensor_info = df_sensor_info[df_sensor_info['SENSOR_OID'].str.slice(10,11) == '6']
-
-    list = df_sensor_info['SENSOR_OID'].tolist()
-
-    return list
 
 
 def read_csv(file_name):
@@ -79,7 +32,7 @@ if __name__ == '__main__':
     plot_type = 'graph'
     resample_how = '30min'
 
-    dir = 'C:/_data/output_db_file_pi'
+    dir = 'C:\\_data\\output_db_file_pi'
 
     list_location = ['고창', '광주', '대구', '대전', '안산']
     list_mounting_position = ['변압기 본체', '부하 개폐기', '완금', '전주', '통신용 함체']
@@ -87,7 +40,7 @@ if __name__ == '__main__':
     list_manufacturer_number = ['1', '4', '6']
 
     # pole information read
-    df_sensor_info = pd.read_csv('C:/_data/iot_sensor_info.csv', encoding='euckr')
+    df_sensor_info = pd.read_csv('C:\\_data\\iot_sensor_info.csv', encoding='euckr')
     df_sensor_info = df_sensor_info[df_sensor_info['MOUNTING_POSITION'].notnull()]
     df_sensor_info['FILE_NAME'] = df_sensor_info['SENSOR_OID'].str.slice(10, 11) + '_' + df_sensor_info['POLE_CPTZ_NO'] + '_' + df_sensor_info['SENSOR_OID'] + '.csv'
 
@@ -95,10 +48,10 @@ if __name__ == '__main__':
         for item_manufacturer in list_manufacturer_number:
             for item_mounting_position in list_mounting_position:
 
-                list_result = get_list_from_location(df_sensor_info, item_location)
-                list_from_mounting_position = get_list_from_mounting_position(df_sensor_info, item_mounting_position)
+                list_result = com.get_list_from_location(df_sensor_info, item_location)
+                list_from_mounting_position = com.get_list_from_mounting_position(df_sensor_info, item_mounting_position)
                 list_result = [item for item in list_result if item[item.rfind('_') + 1:item.rfind('.')] in list_from_mounting_position]
-                list_from_manufacturer = get_list_from_manufacturer(df_sensor_info, item_manufacturer)
+                list_from_manufacturer = com.get_list_from_manufacturer(df_sensor_info, item_manufacturer)
                 list_result = [item for item in list_result if item[item.rfind('_') + 1:item.rfind('.')] in list_from_manufacturer]
 
 
@@ -113,7 +66,7 @@ if __name__ == '__main__':
                             list_file_name.append(os.path.join(path, file))
 
                 # 아웃풋 디렉토리 체크
-                dir_output = 'C:/_data/output/{}/{}/{}/{}/{}'.format(plot_type, resample_how, item_location, item_manufacturer, item_mounting_position)
+                dir_output = 'C:\\_data\\output\\{}\\{}\\{}\\{}\\{}'.format(plot_type, resample_how, item_location, item_manufacturer, item_mounting_position)
                 if not os.path.isdir(dir_output):
                     os.makedirs(dir_output)
 
@@ -147,7 +100,7 @@ if __name__ == '__main__':
                             legned = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
                             plt.title(item_location + '_' + item_manufacturer + '_' + item_mounting_position + '_' + item_variable)
                             plt.xticks(rotation=30)
-                            plt.savefig('C:/_data/output/' + plot_type + '/' + resample_how + '/' + item_location + '/' + item_manufacturer + '/' + item_mounting_position + '/' + item_variable + '_' + str(idx + cmt_image) + '.png', bbox_extra_artists=(legned,), bbox_inches='tight')
+                            plt.savefig('C:\\_data\\output\\' + plot_type + '\\' + resample_how + '\\' + item_location + '\\' + item_manufacturer + '\\' + item_mounting_position + '\\' + item_variable + '_' + str(idx + cmt_image) + '.png', bbox_extra_artists=(legned,), bbox_inches='tight')
                             plt.close()
                         else:
                             print(item_location + '_' + item_manufacturer + '_' + item_mounting_position + '_' + item_variable + ',', 'CNT:', idx + cmt_image, ', 데이터가 없습니다.')
