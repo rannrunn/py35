@@ -1,31 +1,21 @@
-from matplotlib.font_manager import FontProperties
+import scipy.signal
+import scipy as sp
 import matplotlib.pyplot as plt
 import numpy as np
+sp.random.seed(0)
+N = 2**15
+e = sp.stats.bernoulli.rvs(0.5, size=N) * 2 - 1
 
+f1, P1 = sp.signal.welch(e)
+plt.semilogy(f1, P1);
 
-def f(t):
-    s1 = np.cos(2*np.pi*t)
-    e1 = np.exp(-t)
-    return s1 * e1
+# 비교를 위한 단일 주파수 신호 (mono tone)
+fs = 10e3; N = 1e5; amp = 2*np.sqrt(2); freq = 1000; noise_power = 0.001 * fs / 2
+time = np.arange(N) / fs
+s = amp*np.sin(2*np.pi*freq*time)
 
-t1 = np.arange(0.0, 5.0, 0.1)
-t2 = np.arange(0.0, 5.0, 0.02)
-t3 = np.arange(0.0, 2.0, 0.01)
-
-
-plt.subplot(121)
-plt.plot(t1, f(t1), 'o', t2, f(t2), '-')
-plt.title('subplot 1')
-plt.ylabel('Damped oscillation')
-plt.suptitle('This is a somewhat long figure title', fontsize=16)
-
-
-plt.subplot(122)
-plt.plot(t3, np.cos(2*np.pi*t3), '--')
-plt.xlabel('time (s)')
-plt.title('subplot 2')
-plt.ylabel('Undamped')
-
-plt.subplots_adjust(left=0.2, wspace=0.8, top=0.8)
-
+f2, P2 = sp.signal.welch(s)
+plt.semilogy(f2, P2);
+plt.xlim([0.01, 0.49])
+plt.ylim([0.5e-1, 1e3])
 plt.show()
