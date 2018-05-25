@@ -7,7 +7,7 @@ import folium
 import pandas as pd
 
 # 데이터베이스 접속 정보 설정
-con = MySQLdb.connect('192.168.0.7', 'root', '1111', 'SFIOT')
+con = MySQLdb.connect('127.0.0.1', 'root', '1111', 'KEPIOT')
 con.set_character_set('utf8')
 cur = con.cursor(MySQLdb.cursors.DictCursor)
 cur.execute('SET NAMES utf8;')
@@ -38,5 +38,5 @@ for idx in range(len(df)):
 # folium.GeoJson(jsonData, name='json_data').add_to(map_osm)
 
 # 파일 저장 위치 설정
-map_osm.save('d:/map8.html')
+map_osm.save('d:/map.html')
 
