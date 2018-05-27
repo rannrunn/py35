@@ -51,10 +51,9 @@ def make_plot(dict):
     plt.subplot(133)
     plt.title('\n\n1 Month')
     corr_1_month = df.resample('1M').mean().corr()
-    sns.heatmap(corr_1_month, mask=mask, cmap=cmap, vmax=1, vmin=-1, center=0, annot=True, fmt='0.2f')
 
-    plt.savefig('C:\\_data\\output\\' + plot_type + '\\' + resample_how + '\\' + item_location + '\\' + item_manufacturer + '\\' + item_mounting_position + '\\' + pole_id + '_' + df.index.name + '.png', bbox_inches='tight')
-    # plt.show()
+    # plt.savefig('C:\\_data\\output\\' + plot_type + '\\' + resample_how + '\\' + item_location + '\\' + item_manufacturer + '\\' + item_mounting_position + '\\' + pole_id + '_' + df.index.name + '.png', bbox_inches='tight')
+    plt.show()
     plt.close()
     print(item_location + '_' + item_manufacturer + '_' + item_mounting_position + '_' + pole_id + '_' + df.index.name)
 

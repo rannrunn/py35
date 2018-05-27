@@ -1,21 +1,61 @@
-import scipy.signal
-import scipy as sp
+# coding: utf-8
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
-sp.random.seed(0)
-N = 2**15
-e = sp.stats.bernoulli.rvs(0.5, size=N) * 2 - 1
+import os
+from multiprocessing import Pool
+import csv
 
-f1, P1 = sp.signal.welch(e)
-plt.semilogy(f1, P1);
 
-# 비교를 위한 단일 주파수 신호 (mono tone)
-fs = 10e3; N = 1e5; amp = 2*np.sqrt(2); freq = 1000; noise_power = 0.001 * fs / 2
-time = np.arange(N) / fs
-s = amp*np.sin(2*np.pi*freq*time)
+dir = 'C:\\_data\\output_db_file_pi'
 
-f2, P2 = sp.signal.welch(s)
-plt.semilogy(f2, P2);
-plt.xlim([0.01, 0.49])
-plt.ylim([0.5e-1, 1e3])
-plt.show()
+list_files = []
+for path, dirs, files in os.walk(dir):
+    # print(path)
+    list_files = files
+    break
+
+print(list_files)
+
+list_result_1 = []
+list_result_2 = []
+
+
+print(list_result_1)
+path_file = 'C:\\_data\\time_diff.txt'
+
+dir = 'C:\\_data\\output_db_file_pi'
+list_min = []
+list_xx = []
+pole_id = ''
+sensor_oid = list_files[0][list_files[0].rfind('_') + 1:list_files[0].rfind('.')]
+df = pd.read_csv(os.path.join(dir, list_files[0]), encoding='euckr')
+df['TIME_ID'] = pd.to_datetime(df['TIME_ID'])
+df['TIME'] = df['TIME_ID']
+df.set_index('TIME_ID', inplace=True)
+df = df.drop(df[df['TEMP'].isnull()].index)
+print(df[df['TEMP'].isnull()])
+df['TIME_DIFF'] = df['TIME'].diff()
+min = df['TIME_DIFF'].min().total_seconds()
+# print(df[df['TIME_DIFF'].dt.total_seconds() == 0][-1:])
+# print(min)
+# print(sensor_oid)
+if 180 > min:
+    list_min.append(tuple([sensor_oid, df[df['TIME_DIFF'].dt.total_seconds() == 0][-1:]['TIME'].values]))
+
+
+#Assuming res is a flat list
+with open(path_file, "w") as output:
+    for val in list_result_1:
+        output.write(val + '\n')
+
+
+
+
+
+
+
+
+
+
