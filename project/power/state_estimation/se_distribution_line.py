@@ -1,5 +1,5 @@
 import sys
-sys.setrecursionlimit(1000)
+sys.setrecursionlimit(300)
 import pandas as pd
 pd.set_option('display.expand_frame_repr', False)
 pd.set_option('max_columns', 30)
@@ -15,7 +15,7 @@ def function(dl_id, sw_id_f, multi_flag):
     # 다중화 개폐기의 인풋이 바로 아웃풋인 경우는 없다고 생각
     elif len(df_local_sw_frtu) > 0 and multi_flag == False:
         sw_loc = df_local_sw_frtu['sw_loc'].values[0]
-        sw_loc = sw_loc[:sw_loc.find('(')]
+        sw_loc = sw_loc[:sw_loc.find('(')] if sw_loc.find('(') > -1 else sw_loc
         sr_sw_id = df_sw_frtu[df_sw_frtu['sw_loc'].apply(lambda x: x[:x.find('(')] if x.find('(') > -1 else x) == sw_loc]['sw_id']
         print('다중화개폐기 인풋:', sw_id_f)
         print('다중화개폐기 로케이션:', sw_loc)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     # DL 8, 10 은 루프가 있어 오류남
     # 13번 DL 은 다중화 개폐기(9087 : 23, 31)의 모양이 독특함
-    dl_id = 13
+    dl_id = 10
 
     cb_id = None
     if len(df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id']) > 0:
