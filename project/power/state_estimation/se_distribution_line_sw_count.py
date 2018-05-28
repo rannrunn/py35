@@ -3,6 +3,7 @@ sys.setrecursionlimit(10000)
 import pandas as pd
 pd.set_option('display.expand_frame_repr', False)
 pd.set_option('max_columns', 30)
+import os
 
 def function(dl_id, sw_id_f, multi_flag, list_sw):
     # 같은 sw가 SEC 테이블에서 들어온 경우('.0'이 있음)와 SW_FRTU 테이블에서 들어온 경우('.0'이 없음)를 구분하여 조건을 따짐
@@ -10,7 +11,9 @@ def function(dl_id, sw_id_f, multi_flag, list_sw):
     if str(sw_id_f) in list_sw and str(sw_id_f) != 'nan':
         # print(str(sw_id_f) + '가 반복됩니다.')
         return list_sw
-    list_sw.append(str(sw_id_f))
+    # 다중화 개폐기에 속한 개폐기 중 인풋 개폐기를 제외한 나머지 개폐기들은 리스트에 추가시키지 않음
+    if multi_flag == False:
+        list_sw.append(str(sw_id_f))
     if str(sw_id_f) == 'nan':
         return list_sw
     df_local_sec = df_sec.loc[df_sec['sw_id_f'] == sw_id_f]
@@ -79,5 +82,8 @@ if __name__ == '__main__':
 
         print('idx:', idx)
 
-    df_dl_line_count.to_csv('C:\\_data\\dl_line_count.csv', index=False)
+    dir = 'C:\\_data'
+    if not os.path.isdir(dir):
+        os.makedirs(dir)
+    df_dl_line_count.to_csv(os.path.join(dir, 'dl_line_count.csv'), index=False)
 
