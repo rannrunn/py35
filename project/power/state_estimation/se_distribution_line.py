@@ -43,7 +43,8 @@ if __name__ == '__main__':
     print(df_sw_frtu.head())
 
     # DL 8, 10 은 루프가 있어 오류남
-    dl_id = 10
+    # 18 : 다중화 개폐기 4개
+    dl_id = 18
 
     cb_id = None
     if len(df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id']) > 0:
