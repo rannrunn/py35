@@ -5,6 +5,7 @@ pd.set_option('display.expand_frame_repr', False)
 pd.set_option('max_columns', 30)
 import os
 
+
 def function(dl_id, sw_id_f, multi_flag, list_sw):
     # 같은 sw가 SEC 테이블에서 들어온 경우('.0'이 있음)와 SW_FRTU 테이블에서 들어온 경우('.0'이 없음)를 구분하여 조건을 따짐
     # (의도한 것은 아니지만 구현이 필요한 알고리즘이 자동으로 해결되었음)
@@ -40,6 +41,7 @@ def function(dl_id, sw_id_f, multi_flag, list_sw):
 
 
 if __name__ == '__main__':
+
     x1 = pd.ExcelFile('C:\\_data\\das_data.xls')
 
     # print(x1.sheet_names)
@@ -48,13 +50,17 @@ if __name__ == '__main__':
     df_sec = x1.parse('sec')
     df_sw_frtu = x1.parse('sw_frtu')
 
+
     # print(df_dl.head())
     # print(df_sec.head())
     # print(df_sw_frtu.head())
 
+
+    # DL 6 의 마지막 SW 인 26555 는 SW_FRTU 테이블에 DL 11에 속한다고 되어 있으니 전력연구원에 질문해야 할 듯 함
     # DL 8, 10 은 루프가 있어 오류남
     # DL 9 는 SW_FRTU 테이블에 개폐기가 여러개 있으나 연결이 끊기니 구현된 단선도 프로그램을 확인해 봐야함
     # 18 : 다중화 개폐기 4개
+
 
     df_dl_line_count = pd.DataFrame(columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
     for idx in range(len(df_dl)):
