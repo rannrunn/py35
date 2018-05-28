@@ -43,7 +43,6 @@ if __name__ == '__main__':
     print(df_sw_frtu.head())
 
     # DL 8, 10 은 루프가 있어 오류남
-    # 13번 DL 은 다중화 개폐기(9087 : 23, 31)의 모양이 독특함
     dl_id = 10
 
     cb_id = None
