@@ -6,14 +6,14 @@ pd.set_option('max_columns', 30)
 import os
 
 
-# 다중화 개폐기가 아닌 경우에도 SW_FRTU 테이블에 정보가 있을 수 있음을 고려
+# 다회로 개폐기가 아닌 경우에도 SW_FRTU 테이블에 정보가 있을 수 있음을 고려
 def function(dl_id, sw_id_f, multi_flag, list_sw, list_text):
     # 같은 sw가 SEC 테이블에서 들어온 경우('.0'이 있음)와 SW_FRTU 테이블에서 들어온 경우('.0'이 없음)를 구분하여 조건을 따짐
     # (의도한 것은 아니지만 구현이 필요한 알고리즘이 자동으로 해결되었음)
     if str(sw_id_f) in list_sw and str(sw_id_f) != 'nan':
         list_text.append(str(sw_id_f) + '가 반복됩니다.')
         return list_sw
-    # 다중화 개폐기에 속한 개폐기 중 인풋 개폐기를 제외한 나머지 개폐기들은 리스트에 추가시키지 않음
+    # 다회로 개폐기에 속한 개폐기 중 인풋 개폐기를 제외한 나머지 개폐기들은 리스트에 추가시키지 않음
     if multi_flag == False:
         list_sw.append(str(sw_id_f))
     if str(sw_id_f) == 'nan':
@@ -26,9 +26,9 @@ def function(dl_id, sw_id_f, multi_flag, list_sw, list_text):
         sw_loc = sw_loc[:sw_loc.find('(')] if sw_loc.find('(') > -1 else sw_loc
         sr_sw_id = df_sw_frtu[df_sw_frtu['sw_loc'].apply(lambda x: x[:x.find('(')] if x.find('(') > -1 else x) == sw_loc]['sw_id']
 
-    # 다중화 개폐기의 인풋이 바로 아웃풋인 경우가 있는 지 확인해 봐야 함 : 없는 듯
-    # SW_FRTU 테이블에 DL_ID가 같고, 같은 그룹에 속한 SW 가 1개를 초과할 경우에만 다중화 개폐기 SW 탐색
-    # 다중화 개폐기 탐색을 통해 함수가 실행된 경우에 다시 다중화 개폐기 탐색을 할 경우 LOOP 가 발생하므로 이 경우는 패스
+    # 다회로 개폐기의 인풋이 바로 아웃풋인 경우가 있는 지 확인해 봐야 함 : 없는 듯
+    # SW_FRTU 테이블에 DL_ID가 같고, 같은 그룹에 속한 SW 가 1개를 초과할 경우에만 다회로 개폐기 SW 탐색
+    # 다회로 개폐기 탐색을 통해 함수가 실행된 경우에 다시 다회로 개폐기 탐색을 할 경우 LOOP 가 발생하므로 이 경우는 패스
     if len(sr_sw_id) > 1 and multi_flag == False:
         list_text.append('개폐기 인풋: ' + str(sw_id_f))
         list_text.append('개폐기 로케이션: ' + str(sw_loc))
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # DL 6 의 마지막 SW 인 26555 는 SW_FRTU 테이블에 DL 11에 속한다고 되어 있으니 전력연구원에 질문해야 할 듯 함
     # DL 8, 10 은 루프가 있어 오류남
     # DL 9 는 SW_FRTU 테이블에 개폐기가 여러개 있으나 연결이 끊기니 구현된 단선도 프로그램을 확인해 봐야함
-    # 18 : 다중화 개폐기 4개
+    # 18 : 다회로 개폐기 4개
 
     df_dl_line_count = pd.DataFrame(columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
 
