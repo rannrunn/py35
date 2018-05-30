@@ -7,7 +7,7 @@ import os
 
 
 # 다회로 개폐기가 아닌 경우에도 SW_FRTU 테이블에 정보가 있을 수 있음을 고려
-def function(dl_id, sw_id_f, multi_flag, list_sw, list_text):
+def function(dl_id, sw_id_f, multi_flag):
     # 같은 sw가 SEC 테이블에서 들어온 경우('.0'이 있음)와 SW_FRTU 테이블에서 들어온 경우('.0'이 없음)를 구분하여 조건을 따짐
     # (의도한 것은 아니지만 구현이 필요한 알고리즘이 자동으로 해결되었음)
     if str(sw_id_f) in list_sw and str(sw_id_f) != 'nan':
@@ -37,12 +37,12 @@ def function(dl_id, sw_id_f, multi_flag, list_sw, list_text):
             list_text.append(str(sw_id_b))
         list_text.append('개폐기 끝')
         for sw_id_b in sr_sw_id:
-            function(dl_id, sw_id_b, True, list_sw, list_text)
-    elif len(df_local_sec) != 0 & ((len(df_sw_frtu[(df_sw_frtu['sw_id'] == sw_id_f)]) == 0) | (len(df_local_sw_frtu) != 0)):
+            function(dl_id, sw_id_b, True)
+    elif len(df_local_sec) != 0 and ((len(df_sw_frtu[(df_sw_frtu['sw_id'] == sw_id_f)]) == 0) or (len(df_local_sw_frtu) != 0)):
         sr_sw_id_b = df_local_sec['sw_id_b']
         for sw_id_b in sr_sw_id_b:
             list_text.append('sw_id_f: ' + str(sw_id_f) + ', sw_id_b: ' + str(sw_id_b))
-            function(dl_id, sw_id_b, False, list_sw, list_text)
+            function(dl_id, sw_id_b, False)
     return list_sw
 
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         list_sw = []
         list_text = []
         if dl_id is not None and cb_id is not None:
-            function(dl_id, cb_id, False, list_sw, list_text)
+            function(dl_id, cb_id, False)
 
         for idx_2, val in  enumerate(list_sw):
             list_sw[idx_2] = list_sw[idx_2].replace('.0', '')
