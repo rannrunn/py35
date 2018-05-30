@@ -9,39 +9,27 @@ import os
 class DL(object):
     def __init__(self, dl_id=None):
         self.dl_id = dl_id
-        self.dl_name
-        self.cb_id
-        self.dl_sw_count
+        self.df_dl = df_dl[df_dl['dl_id'] == dl_id]
+        self.dl_name = self.set_dl_name()
+        self.cb_id = None
+        self.set_cb_id()
+        print('시작')
+        print(self.cb_id)
+        self.dl_sw_objects = CB(self.cb_id)
+        # self.dl_sw_count
 
     def __repr__(self):
         return self.dl_id
 
+    def set_dl_name(self):
+        print(self.df_dl['dl_name'].values[0])
+        self.dl_name = self.df_dl['dl_name'].values[0]
 
-class CB(object):
-    def __init__(self, cb_id=None, children=None):
-        self.cb_id = cb_id
-        self.children = []
-        if children is not None:
-            for child in children:
-                self.add_child(child)
-
-    def __repr__(self):
-        return self.cb_id
-
-    def add_child(self, node):
-        assert isinstance(node, SW)
-        self.children.append(node)
-
+    def set_cb_id(self):
+        print(self.df_dl['cb_id'].values[0])
+        self.cb_id = self.df_dl['cb_id'].values[0]
 
 class SW(object):
-    def __init__(self, sw_id=None):
-        self.sw_id = sw_id
-        self.children = self.get_node(self.sw_id, False)
-
-    def __repr__(self):
-        return self.sw_id
-
-    # 다회로 개폐기가 아닌 경우에도 SW_FRTU 테이블에 정보가 있을 수 있음을 고려
     def get_node(self, sw_id_f, multi_flag):
         result_list_switch = []
         # 같은 sw가 SEC 테이블에서 들어온 경우('.0'이 있음)와 SW_FRTU 테이블에서 들어온 경우('.0'이 없음)를 구분하여 조건을 따짐
@@ -73,31 +61,43 @@ class SW(object):
                 print(str(sw_id_b))
             print('개폐기 끝')
             for sw_id_b in sr_sw_id:
-                result_list_switch.append(self.get_node(sw_id_b, True))
+                result_list_switch.append(SW_MULTI(sw_id_b))
         elif len(df_local_sec) != 0 and ((len(df_sw_frtu[(df_sw_frtu['sw_id'] == sw_id_f)]) == 0) or (len(df_local_sw_frtu) != 0)):
             sr_sw_id_b = df_local_sec['sw_id_b']
             for sw_id_b in sr_sw_id_b:
                 print('sw_id_f: ' + str(sw_id_f) + ', sw_id_b: ' + str(sw_id_b))
-                result_list_switch.append(self.get_node(sw_id_b, False))
+                result_list_switch.append(SW_SINGLE(sw_id_b))
         return result_list_switch
 
 
-class SW_FRTU(object):
-    def __init__(self, sw_loc=None, children=None):
-        self.sw_loc = sw_loc
-        self.children = []
-        if children is not None:
-            for child in children:
-                self.add_child(child)
+class CB(SW):
+    def __init__(self, cb_id=None):
+        print('CB')
+        self.cb_id = cb_id
+        self.children = self.get_node(self.cb_id, False)
 
     def __repr__(self):
-        return self.sw_loc
-
-    def add_child(self, node):
-        assert isinstance(node, SW)
-        self.children.append(node)
+        return self.cb_id
 
 
+class SW_SINGLE(SW):
+    def __init__(self, sw_id_f=None):
+        print('SW_SINGLE')
+        self.sw_id_f = sw_id_f
+        self.children = self.get_node(self.sw_id_f, False)
+
+    def __repr__(self):
+        return self.sw_id_f
+
+
+class SW_MULTI(SW):
+    def __init__(self, sw_id_f=None):
+        print('SW_MULTI')
+        self.sw_id_f = sw_id_f
+        self.children = self.get_node(self.sw_id_f, True)
+
+    def __repr__(self):
+        return self.sw_id_f
 
 
 
@@ -136,8 +136,8 @@ if __name__ == '__main__':
         dl_id = df_dl.loc[idx, 'dl_id']
         dl_name = df_dl.loc[idx, 'dl_name']
 
-        # if dl_id != 6:
-        #     continue
+        if dl_id != 149:
+            continue
 
         cb_id = None
         if len(df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id']) > 0:
@@ -145,11 +145,11 @@ if __name__ == '__main__':
         else:
             print('dl_id가 없습니다.')
 
-
         list_sw = []
-        list_text = []
         if dl_id is not None and cb_id is not None:
-            function(dl_id, cb_id, False, list_sw, list_text)
+            DL(dl_id)
+
+        print(list_sw)
 
         for idx_2, val in  enumerate(list_sw):
             list_sw[idx_2] = list_sw[idx_2].replace('.0', '')
@@ -159,9 +159,6 @@ if __name__ == '__main__':
         df_dl_line_count = df_dl_line_count.append(df_temp, ignore_index=True)
 
         print('idx: ' + str(idx) + ', dl_id: ' + str(dl_id) + ', dl_name: ' + str(dl_name))
-
-        with open(os.path.join(dir_distribution_line_topology, str(dl_id) + '_' + dl_name + '.txt'), 'w') as file:
-            file.writelines(['%s\n' % item for item in list_text])
 
     if not os.path.isdir(dir):
         os.makedirs(dir)
