@@ -4,6 +4,7 @@ import pandas as pd
 pd.set_option('display.expand_frame_repr', False)
 pd.set_option('max_columns', 30)
 import os
+import math
 import numpy as np
 
 
@@ -128,16 +129,12 @@ class DL(object):
 
         if sw_flag == '1':
             for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id]['sw_id_b']:
-                print(sw_id_b)
-                print(type(sw_id_b))
                 dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu)
                 children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
         elif sw_flag == '2':
             sr_sw_id = df_sw_frtu[df_sw_frtu['sw_loc'].apply(lambda x: x[:x.find('(')] if x.find('(') > -1 else x) == sw_loc]['sw_id']
             for sw_id_detail in sr_sw_id:
                 for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id_detail]['sw_id_b']:
-                    print(sw_id_b)
-                    print(type(sw_id_b))
                     dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu)
                     children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
 
