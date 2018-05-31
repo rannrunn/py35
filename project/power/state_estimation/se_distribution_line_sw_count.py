@@ -13,9 +13,9 @@ def function(dl_id, sw_id_f, multi_flag):
     if str(sw_id_f) in list_sw and str(sw_id_f) != 'nan':
         list_text.append(str(sw_id_f) + '가 반복됩니다.')
         return list_sw
-    # 다회로 개폐기에 속한 개폐기 중 인풋 개폐기를 제외한 나머지 개폐기들은 리스트에 추가시키지 않음
-    if multi_flag == False:
-        list_sw.append(str(sw_id_f))
+    # 다회로 개폐기에 속한 개폐기 중 인풋 개폐기를 제외한 나머지 개폐기들은 리스트에 추가시키지 않음 -> 모두 추가 시켜야 루프를 판단할 수 있어 코드 수정
+    list_sw.append(str(sw_id_f))
+
     if str(sw_id_f) == 'nan':
         return list_sw
     df_local_sec = df_sec.loc[df_sec['sw_id_f'] == sw_id_f]
