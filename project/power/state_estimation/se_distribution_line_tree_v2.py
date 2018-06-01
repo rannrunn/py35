@@ -1,30 +1,74 @@
+# coding: utf-8
 import sys
 sys.setrecursionlimit(10000)
 import pandas as pd
 pd.set_option('display.expand_frame_repr', False)
 pd.set_option('max_columns', 30)
 import os
-import math
 import numpy as np
 
 
 class Tree(object):
-    def __init__(self, sw_flag=None, sw_id=None, sw_loc=None, dl_id=None):
-        self.sw_flag = sw_flag
-        self.sw_id = sw_id
-        self.sw_loc = sw_loc
-        self.dl_id = dl_id
+    def __init__(self, df_dl=None, df_sec=None, df_sw_frtu=None, dict_sw_info=None):
+        self.df_dl = df_dl
+        self.df_sec = df_sec
+        self.df_sw_frtu = df_sw_frtu
+        self.sw_flag = dict_sw_info['sw_flag']
+        self.sw_id = dict_sw_info['sw_id']
+        self.sw_loc = dict_sw_info['sw_loc']
+        self.dl_id = dict_sw_info['dl_id']
+        self.sw_id_f = dict_sw_info['sw_id_f']
+        self.list_detail_sw_id = []
+        self.list_detail_sw_link_info = []
         self.children = []
 
+
     def __repr__(self):
-        result = ''
-        if self.sw_flag == '1':
-            result = self.sw_id
-        elif self.sw_flag == '2':
-            result = self.sw_loc
+        sw_link_info = ''
+        if self.sw_flag == '1' or self.sw_flag == '2':
+            list_sw = []
+            str_link_list = ''
+            # tuple_sw[0] : 스위치 아이디
+            # tuple_sw[1] : 스위치 연결 정보 dictionary
+            for tuple_sw in self.list_detail_sw_link_info:
+                list_sw.append(tuple_sw[0])
+                str_link_list += ', ' + str(tuple_sw[0]) + ':F' + str(tuple_sw[1]['f']) + ':B' + str(tuple_sw[1]['b'])
+            str_link_list = '(' + str_link_list[2:] + ')'
+            if self.sw_flag == '1':
+                sw_link_info = str(self.sw_id).ljust(30, ' ') + ' ' + str(list_sw).ljust(50, ' ') + ' ' + str_link_list
+            elif self.sw_flag == '2':
+                sw_link_info = self.sw_loc.ljust(30, ' ') + ' ' + str(list_sw).ljust(50, ' ') + ' ' + str_link_list
         elif self.sw_flag == '3':
-            result = 'Blank'
-        return
+            sw_link_info = 'Blank'.ljust(30, ' ') + ' ' + str([]).ljust(50, ' ') + ' ' + '(Blank:F[' + str(self.sw_id_f) + ']:B[])'
+        result = '[' + str(self.dl_id).ljust(3, ' ') + '] ' + sw_link_info
+        return str(result)
+        # .ljust(3, '0')
+
+    def add_detail_sw_id(self, sr_sw_id):
+        if self.sw_flag == '1':
+            self.list_detail_sw_id.append(self.sw_id)
+        elif self.sw_flag == '2':
+            if sr_sw_id is not None:
+                for item_sw_id in sr_sw_id:
+                    self.list_detail_sw_id.append(item_sw_id)
+        elif self.sw_flag == '3':
+            pass
+
+
+
+    def set_detail_sw_link_info(self):
+
+        for val_sw_id in self.list_detail_sw_id:
+            list_link_forward = []
+            list_link_backward = []
+            for sw_id_f in self.df_sec[df_sec['sw_id_b'] == val_sw_id]['sw_id_f']:
+                list_link_forward.append(sw_id_f)
+            for sw_id_b in self.df_sec[df_sec['sw_id_f'] == val_sw_id]['sw_id_b']:
+                list_link_backward.append(sw_id_b)
+            tuple_sw = (val_sw_id, dict({'f':list_link_forward, 'b':list_link_backward}))
+            self.list_detail_sw_link_info.append(tuple_sw)
+
+
 
     def add_child(self, children):
         if children is not None:
@@ -32,13 +76,9 @@ class Tree(object):
                 assert isinstance(child, Tree)
                 self.children.append(child)
 
+
     def search(self, Tree):
-        if Tree.sw_flag == '1':
-            print(Tree.sw_id)
-        elif Tree.sw_flag == '2':
-            print(Tree.sw_loc)
-        elif Tree.sw_flag == '3':
-            print('노스위치')
+        print(Tree)
         if Tree.children is not None:
             for child in Tree.children:
                 Tree.search(child)
@@ -47,14 +87,12 @@ class Tree(object):
 class DL(object):
     def __init__(self, df_dl=None, df_sec=None, df_sw_frtu=None, dl_id=None):
 
-
-        self.dl_id = dl_id
         self.df_dl = df_dl[df_dl['dl_id'] == dl_id]
-        self.dl_name = self.df_dl['dl_name'].values[0]
-        self.cb_id = self.df_dl['cb_id'].values[0]
+        self.dl_id = dl_id
+        self.dl_name = self.df_dl.loc[df_dl['dl_id'] == dl_id, 'dl_name'].values[0]
+        self.cb_id = self.df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id'].values[0]
         self.dl_list_sw = []
-        self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_sw_info('1', self.cb_id, '', self.dl_id))
-        self.dl_tree.search(self.dl_tree)
+        self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_sw_info('1', self.cb_id, '', self.dl_id, np.nan))
         # self.dl_sw_count
 
 
@@ -66,22 +104,22 @@ class DL(object):
         return self.dl_list_sw
 
 
-    def set_dict_sw_info(self, sw_flag, sw_id, sw_loc, dl_id):
-        return dict({'sw_flag':sw_flag, 'sw_id':sw_id, 'sw_loc':sw_loc, 'dl_id':dl_id})
+    def set_dict_sw_info(self, sw_flag, sw_id, sw_loc, dl_id, sw_id_f):
+        return dict({'sw_flag':sw_flag, 'sw_id':sw_id, 'sw_loc':sw_loc, 'dl_id':dl_id, 'sw_id_f':sw_id_f})
 
 
-    def set_sw_info(self, sw_id, df_sw_frtu):
+    def set_sw_info(self, sw_id, df_sw_frtu, dl_id, sw_id_f):
         result = dict()
 
         sw_flag = ''
-        sw_id = sw_id
         sw_loc = ''
-        sw_dl_id = ''
+        sw_dl_id = dl_id
+        sw_id_f = sw_id_f
 
         df_local_sw_frtu = df_sw_frtu[(df_sw_frtu['sw_id'] == sw_id) & (df_sw_frtu['sw_id'].notnull())]
         sr_sw_id = pd.DataFrame()
         sw_loc = ''
-        if len(df_local_sw_frtu) > 0:
+        if not df_local_sw_frtu.empty:
             sw_dl_id = df_local_sw_frtu['dl_id'].values[0]
             sw_loc = df_local_sw_frtu['sw_loc'].values[0]
             sw_loc = sw_loc[:sw_loc.find('(')] if sw_loc.find('(') > -1 else sw_loc
@@ -89,93 +127,78 @@ class DL(object):
 
         # 다회로 개폐기의 경우 -> 2
         if len(sr_sw_id) > 1:
-            result = self.set_dict_sw_info('2', sw_id, sw_loc, sw_dl_id)
+            result = self.set_dict_sw_info('2', sw_id, sw_loc, sw_dl_id, sw_id_f)
         # 싱글 개폐기 중 스위치 id 가 없는 경우 -> 3
-        elif sw_id == '':
-            result = self.set_dict_sw_info('3', sw_id, sw_loc, sw_dl_id)
+        elif np.isnan(sw_id):
+            result = self.set_dict_sw_info('3', sw_id, sw_loc, sw_dl_id, sw_id_f)
         # 싱글 개폐기의 경우 -> 1
         else:
-            result = self.set_dict_sw_info('1', sw_id, sw_loc, sw_dl_id)
+            result = self.set_dict_sw_info('1', sw_id, sw_loc, sw_dl_id, sw_id_f)
         return result
 
 
-    # return list: 연결정보 있고 목적 스위치가 있음, None: 연결정보 없음(진짜 없는 경우 or DL이 다른 경우), Blank: 연결정보 있으나 목적 스위치가 없음
     def set_dl_tree_list(self, df_dl, df_sec, df_sw_frtu, dict_sw_info):
         children = []
-        # sw_flag 1:싱글 개폐기, 2:다회로 개폐기
+        # sw_flag 1:싱글 개폐기, 2:다회로 개폐기, 3:블랭크
         sw_flag = dict_sw_info['sw_flag']
         sw_id = dict_sw_info['sw_id']
         sw_loc = dict_sw_info['sw_loc']
         sw_dl_id = dict_sw_info['dl_id']
-        tree = Tree(sw_flag, sw_id, sw_loc, sw_dl_id)
+        sw_id_f = dict_sw_info['sw_id_f']
+        tree = Tree(df_dl, df_sec, df_sw_frtu, dict_sw_info)
+
 
         if sw_flag == '1':
+
+            tree.add_detail_sw_id(pd.Series())
+            tree.set_detail_sw_link_info()
+
+            # dl_list_sw 에 sw_id 가 있을 경우 dl_list_sw 에 sw_id 추가하고 리턴
             if sw_id in self.dl_list_sw:
                 self.dl_list_sw.append(sw_id)
                 return tree
             self.dl_list_sw.append(sw_id)
+
+            # 다른 DL의 개폐기인 경우
+            if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
+                return tree
+
+            for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id]['sw_id_b']:
+                # dict_sw_info 의 sw_id_f 는 for 문에서 나온 sw_id_b 이다.
+                dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id)
+                children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
+
         elif sw_flag == '2':
+
+            sr_sw_id = df_sw_frtu[df_sw_frtu['sw_loc'].apply(lambda x: x[:x.find('(')] if x.find('(') > -1 else x) == sw_loc]['sw_id']
+            tree.add_detail_sw_id(sr_sw_id)
+            tree.set_detail_sw_link_info()
+
+            # dl_list_sw 에 sw_loc 이 있을 경우 리턴 dl_list_sw 에 sw_loc 추가하고 리턴
             if sw_loc in self.dl_list_sw:
                 self.dl_list_sw.append(sw_loc)
                 return tree
             self.dl_list_sw.append(sw_loc)
 
-        # 다른 DL의 개폐기 이거나 스위치 아이디가 없는 경우
-        if sw_dl_id != '' and sw_dl_id != self.dl_id:
-            return tree
-        # 스위치 아이디가 없는 경우
-        if sw_id == '':
-            return tree
+            # 다른 DL의 개폐기인 경우
+            if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
+                return tree
 
-        if sw_flag == '1':
-            for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id]['sw_id_b']:
-                dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu)
-                children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
-        elif sw_flag == '2':
-            sr_sw_id = df_sw_frtu[df_sw_frtu['sw_loc'].apply(lambda x: x[:x.find('(')] if x.find('(') > -1 else x) == sw_loc]['sw_id']
             for sw_id_detail in sr_sw_id:
                 for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id_detail]['sw_id_b']:
-                    dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu)
+                    # dict_sw_info 의 sw_id_f 는 for 문에서 나온 sw_id_detail 이다.
+                    dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id_detail)
                     children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
+
+        elif sw_flag == '3':
+
+            # dl_list_sw 에 스위치 아이디가 없는 항목이 있든 없든 dl_list_sw 에 추가하고 리턴
+            self.dl_list_sw.append(sw_id)
+            return tree
 
         tree.add_child(children)
 
         return tree
-
-
-class SW(object):
-    def __init__(self):
-        pass
-
-
-class CB(SW):
-    def __init__(self, cb_id=None):
-        # print('CB')
-        self.cb_id = cb_id
-        self.children = self.get_node(self.cb_id, False)
-
-    def __repr__(self):
-        return self.cb_id
-
-
-class SW_SINGLE(SW):
-    def __init__(self, sw_id_f=None):
-        # print('SW_SINGLE')
-        self.sw_id_f = sw_id_f
-        self.children = self.get_node(self.sw_id_f, False)
-
-    def __repr__(self):
-        return self.sw_id_f
-
-
-class SW_MULTI(SW):
-    def __init__(self, sw_id_f=None):
-        # print('SW_MULTI')
-        self.sw_id_f = sw_id_f
-        self.children = self.get_node(self.sw_id_f, True)
-
-    def __repr__(self):
-        return self.sw_id_f
 
 
 if __name__ == '__main__':
@@ -201,11 +224,6 @@ if __name__ == '__main__':
     # print(df_sw_frtu.head())
 
 
-    # DL 6 의 마지막 SW 인 26555 는 SW_FRTU 테이블에 DL 11에 속한다고 되어 있으니 전력연구원에 질문해야 할 듯 함
-    # DL 8, 10 은 루프가 있어 오류남
-    # DL 9 는 SW_FRTU 테이블에 개폐기가 여러 개 있으나 연결이 끊기니 구현된 단선도 프로그램을 확인해 봐야함
-    # 18 : 다회로 개폐기 4개
-
     df_dl_line_count = pd.DataFrame(columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
 
     for idx in range(len(df_dl)):
@@ -227,8 +245,9 @@ if __name__ == '__main__':
             dl = DL(df_dl, df_sec, df_sw_frtu, dl_id)
 
         print('ALL SWITCH:', dl.get_dl_list_sw())
-        print(len(list(set(dl.get_dl_list_sw()))))
-        print(list(set(dl.get_dl_list_sw())))
+        print('트리 시작')
+        dl.dl_tree.search(dl.dl_tree)
+        print('트리 종료')
 
         # df_temp = pd.DataFrame([[dl_id, dl_name, cb_id, len(list_dl)]], columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
         # df_dl_line_count = df_dl_line_count.append(df_temp, ignore_index=True)
