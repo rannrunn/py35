@@ -9,7 +9,7 @@ import numpy as np
 
 
 class Tree(object):
-    def __init__(self, df_dl=None, df_sec=None, df_sw_frtu=None, dict_sw_info=None):
+    def __init__(self, df_dl=None, df_sec=None, df_sw_frtu=None, dict_tree_info=None, dict_sw_info=None):
         self.df_dl = df_dl
         self.df_sec = df_sec
         self.df_sw_frtu = df_sw_frtu
@@ -21,6 +21,8 @@ class Tree(object):
         self.list_detail_sw_id = []
         self.list_detail_sw_link_info = []
         self.children = []
+
+        self.depth = dict_tree_info['depth']
 
 
     def __repr__(self):
@@ -35,14 +37,15 @@ class Tree(object):
                 str_link_list += ', ' + str(tuple_sw[0]) + ':F' + str(tuple_sw[1]['f']) + ':B' + str(tuple_sw[1]['b'])
             str_link_list = '(' + str_link_list[2:] + ')'
             if self.sw_flag == '1':
-                sw_link_info = str(self.sw_id).ljust(30, ' ') + ' ' + str(list_sw).ljust(50, ' ') + ' ' + str_link_list
+                sw_id_or_loc = str(self.sw_id)
             elif self.sw_flag == '2':
-                sw_link_info = self.sw_loc.ljust(30, ' ') + ' ' + str(list_sw).ljust(50, ' ') + ' ' + str_link_list
+                sw_id_or_loc = self.sw_loc
+            sw_link_info = sw_id_or_loc.ljust(30, ' ') + ' ' + str(list_sw).ljust(50, ' ') + ' ' + str_link_list
         elif self.sw_flag == '3':
             sw_link_info = 'Blank'.ljust(30, ' ') + ' ' + str([]).ljust(50, ' ') + ' ' + '(Blank:F[' + str(self.sw_id_f) + ']:B[])'
-        result = '[' + str(self.dl_id).ljust(3, ' ') + '] ' + sw_link_info
+        result = '[' + str(self.dl_id).ljust(3, ' ') + '] ' + str(self.depth).ljust(4) + sw_link_info
         return str(result)
-        # .ljust(3, '0')
+
 
     def add_detail_sw_id(self, sr_sw_id):
         if self.sw_flag == '1':
@@ -55,9 +58,7 @@ class Tree(object):
             pass
 
 
-
     def set_detail_sw_link_info(self):
-
         for val_sw_id in self.list_detail_sw_id:
             list_link_forward = []
             list_link_backward = []
@@ -69,19 +70,11 @@ class Tree(object):
             self.list_detail_sw_link_info.append(tuple_sw)
 
 
-
     def add_child(self, children):
         if children is not None:
             for child in children:
                 assert isinstance(child, Tree)
                 self.children.append(child)
-
-
-    def search(self, Tree):
-        print(Tree)
-        if Tree.children is not None:
-            for child in Tree.children:
-                Tree.search(child)
 
 
 class DL(object):
@@ -92,7 +85,7 @@ class DL(object):
         self.dl_name = self.df_dl.loc[df_dl['dl_id'] == dl_id, 'dl_name'].values[0]
         self.cb_id = self.df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id'].values[0]
         self.dl_list_sw = []
-        self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_sw_info('1', self.cb_id, '', self.dl_id, np.nan))
+        self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_tree_info(0), self.set_dict_sw_info('1', self.cb_id, '', self.dl_id, np.nan))
         # self.dl_sw_count
 
 
@@ -102,6 +95,15 @@ class DL(object):
 
     def get_dl_list_sw(self):
         return self.dl_list_sw
+
+
+    def set_dict_tree_info(self, depth):
+        return dict({'depth':depth})
+
+
+    def det_tree_info(self, parent_depth):
+        depth = parent_depth + 1
+        return dict({'depth':depth})
 
 
     def set_dict_sw_info(self, sw_flag, sw_id, sw_loc, dl_id, sw_id_f):
@@ -137,7 +139,7 @@ class DL(object):
         return result
 
 
-    def set_dl_tree_list(self, df_dl, df_sec, df_sw_frtu, dict_sw_info):
+    def set_dl_tree_list(self, df_dl, df_sec, df_sw_frtu, dict_tree_info, dict_sw_info):
         children = []
         # sw_flag 1:싱글 개폐기, 2:다회로 개폐기, 3:블랭크
         sw_flag = dict_sw_info['sw_flag']
@@ -145,8 +147,9 @@ class DL(object):
         sw_loc = dict_sw_info['sw_loc']
         sw_dl_id = dict_sw_info['dl_id']
         sw_id_f = dict_sw_info['sw_id_f']
-        tree = Tree(df_dl, df_sec, df_sw_frtu, dict_sw_info)
+        tree = Tree(df_dl, df_sec, df_sw_frtu, dict_tree_info, dict_sw_info)
 
+        dict_next_tree_info = self.set_dict_tree_info(dict_tree_info['depth'] + 1)
 
         if sw_flag == '1':
 
@@ -165,8 +168,8 @@ class DL(object):
 
             for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id]['sw_id_b']:
                 # dict_sw_info 의 sw_id_f 는 for 문에서 나온 sw_id_b 이다.
-                dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id)
-                children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
+                dict_next_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id)
+                children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_next_tree_info, dict_next_sw_info))
 
         elif sw_flag == '2':
 
@@ -187,8 +190,8 @@ class DL(object):
             for sw_id_detail in sr_sw_id:
                 for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id_detail]['sw_id_b']:
                     # dict_sw_info 의 sw_id_f 는 for 문에서 나온 sw_id_detail 이다.
-                    dict_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id_detail)
-                    children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_sw_info))
+                    dict_next_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id_detail)
+                    children.append(self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, dict_next_tree_info, dict_next_sw_info))
 
         elif sw_flag == '3':
 
@@ -199,6 +202,13 @@ class DL(object):
         tree.add_child(children)
 
         return tree
+
+
+    def search(self, Tree):
+        print(Tree)
+        if Tree.children is not None:
+            for child in Tree.children:
+                self.search(child)
 
 
 if __name__ == '__main__':
@@ -246,7 +256,7 @@ if __name__ == '__main__':
 
         print('ALL SWITCH:', dl.get_dl_list_sw())
         print('트리 시작')
-        dl.dl_tree.search(dl.dl_tree)
+        dl.search(dl.dl_tree)
         print('트리 종료')
 
         # df_temp = pd.DataFrame([[dl_id, dl_name, cb_id, len(list_dl)]], columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
