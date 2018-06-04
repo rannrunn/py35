@@ -93,7 +93,7 @@ class DL(object):
         self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_tree_info(str(cb_id), 0), self.set_dict_sw_info('1', self.cb_id, '', self.dl_id, np.nan))
         # self.dl_sw_count
 
-        self.list_direction = ['RDU', 'DRL', 'LDU', 'URL']
+        self.list_direction = ['RDUX', 'DRLX', 'LDUX', 'URLX']
 
 
     def __repr__(self):
@@ -184,7 +184,10 @@ class DL(object):
             self.dl_list_sw.append(sw_id)
 
             # 다른 DL의 개폐기인 경우
-            if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
+            # if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
+            #     return tree
+
+            if sw_id == 2118 or sw_id == 28420 :
                 return tree
 
             for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id]['sw_id_b']:
@@ -206,7 +209,10 @@ class DL(object):
             self.dl_list_sw.append(sw_loc)
 
             # 다른 DL의 개폐기인 경우
-            if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
+            # if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
+            #     return tree
+
+            if sw_id == 2118 or sw_id == 28420 :
                 return tree
 
             for sw_id_detail in sr_sw_id:
@@ -293,11 +299,13 @@ class DL(object):
                             next_coordinate = [coordinate[0] - 1, coordinate[1]]
                         elif item_dir[idx] == 'U':
                             next_coordinate = [coordinate[0], coordinate[1] + 1]
+                        elif item_dir[idx] == 'X':
+                            next_coordinate = [coordinate[0] + 10, coordinate[1] + 10]
                         self.set_coordinate(Tree.children[val], next_coordinate, item_dir[idx])
 
 
     def print_coordinate(self, Tree):
-        print('Tree Name:', Tree.name, 'Detail SW ID:', Tree.list_detail_sw_id, 'SW ID F', Tree.sw_id_f, ', Coordinate:', Tree.coordinate)
+        print('Coordinate:', Tree.coordinate, ', Tree Name:', Tree.name, 'Detail SW ID:', Tree.list_detail_sw_id, 'SW ID F', Tree.sw_id_f)
         if Tree.children is not None:
             for child in Tree.children:
                 self.print_coordinate(child)
@@ -333,7 +341,7 @@ if __name__ == '__main__':
         dl_id = df_dl.loc[idx, 'dl_id']
         dl_name = df_dl.loc[idx, 'dl_name']
 
-        if dl_id != 23:
+        if dl_id != 40:
             continue
 
         cb_id = None
