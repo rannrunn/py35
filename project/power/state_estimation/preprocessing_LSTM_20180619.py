@@ -32,19 +32,12 @@ def head(data_x, n):
         print(data_x[0:10])
 
 
-def plot(title, data_x, color="xkcd:azure", is_show=True, is_saveimg=False, save_file_name=''):
-    plt.title(title)
+def plot(data_x, color="xkcd:azure", is_show=True):
     plt.plot(data_x, color=color)
     plt.grid(True)
 
-    if is_saveimg:
-        plt.figure(figsize=(8,4))
-        plt.savefig('C:\\_data\\lstm_sine_plot\\' + save_file_name + '.png', bbox_inches='tight')
-
     if is_show:
         plt.show()
-
-
 
 
 def set_dir(path_):
@@ -65,14 +58,6 @@ def normalize(data, min_=-1, max_=1):
         data_normalized[idx] = min_ + ((data_normalized[idx] - min_data) * (max_ - min_)) / (max_data - min_data)
 
     return data_normalized, max_data, min_data
-
-
-def unnormalize(data_normalized, norm_min=-1, norm_max=1, real_min=-1, real_max=1):
-    data_unnormalized = []
-    for idx in range(len(data_normalized)):
-        data_unnormalized.append(real_min + ((data_normalized[idx] - norm_min) / (norm_max - norm_min)) * (real_max - real_min))
-
-    return data_unnormalized, norm_max, norm_min
 
 
 def de_normalize(data_normalized, max_data, min_data, max_set, min_set):

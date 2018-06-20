@@ -1,5 +1,3 @@
-
-
 import torch
 from torch.autograd import Variable
 import numpy as np
@@ -9,11 +7,9 @@ import math
 import os
 import matplotlib.pyplot as plt
 import copy
-import preprocessing_LSTM as pre     # todo: 여기 밑줄 왜 뜨지...?
+import preprocessing_LSTM_20180619 as pre     # todo: 여기 밑줄 왜 뜨지...?
 from tqdm import tqdm
 import copy
-
-
 
 # todo: GPU 세팅
 # if torch.cuda.is_available():
@@ -35,7 +31,7 @@ if __name__ == "__main__":
 
     # --- directory --- #
     pre.get_dir()
-    path = r"D:\\"
+    path = r"D:\소프트팩토리\소프트팩토리_대전\data\PQMS"
     pre.set_dir(path)
 
     # --- data --- #
@@ -56,30 +52,25 @@ if __name__ == "__main__":
     #
     # data_x, max_data, min_data = pre.normalize(data_x, -0.5, 0.5)
     # data_x_normalized, max_data, min_data = pre.normalize(data_x, -0.5, 0.5)
-    # data_x_unnormalized = pre.de_normalize(data_x_normalized, max_data, min_data, max_set=0.5, min_set=-0.5)
+    # data_x_denormalized = pre.de_normalize(data_x_normalized, max_data, min_data, max_set=0.5, min_set=-0.5)
 
     # pre.plot(data_x)
-    # pre.plot(data_x_unnormalized)
+    # pre.plot(data_x_denormalized)
     # pre.plot(data_x_normalized)
     # pre.head(data_x, 10)
 
     # 3) sine data
 
-    df_sine = pd.read_csv('D:\\data_sine.csv')
-    data_x = df_sine['Data'].tolist()
-
-    data_unnorm_notnan_ori = copy.deepcopy(data_x)
+    data_x = np.sin(np.arange(0, 30, 0.1)).tolist()
     data_x, max_data, min_data = pre.normalize(data_x, -0.5, 0.5)
-    data_notnan_ori = copy.deepcopy(data_x)
-
 
     # pre.plot(data_x)
 
     # --- preprocess data --- #
     n_col = 1
-    n_row_input = 70
+    n_row_input = 70 * 2
     n_row_output = 1
-    n_row = int(pre.get_n_row(data_x) * 0.8)
+    n_row = pre.get_n_row(data_x)
 
     # make None value on 'data_x'
     # rand_idx = np.random.choice(np.arange(0, n_row, 1), size=n_row//10, replace=False)
@@ -89,32 +80,22 @@ if __name__ == "__main__":
     for idx in rand_idx:
         data_x[idx] = np.nan
 
-    data_for_rnn_x, data_for_rnn_y = pre.get_list_type_data(data_x, n_row_input, n_row_output)
-    data_unnorm_notnan, _ = pre.get_list_type_data(data_unnorm_notnan_ori, n_row_input, n_row_output)
-    data_notnan, _ = pre.get_list_type_data(data_notnan_ori, n_row_input, n_row_output)
+    data_for_rnn_x, _ = pre.get_list_type_data(data_x, n_row_input, n_row_output)
 
     first_data_nan_idxs = []
     for idx in range(len(data_for_rnn_x)):
         if pre.isnan(data_for_rnn_x[idx][0]):
             first_data_nan_idxs.append(idx)
 
-    data_unnorm_notnan_without_first_data_nan = []
-    data_notnan_without_first_data_nan = []
     data_for_rnn_x_without_first_data_nan = []
-    data_for_rnn_y_without_first_data_nan = []
     for idx in range(len(data_for_rnn_x)):
         if idx not in first_data_nan_idxs:
-            data_unnorm_notnan_without_first_data_nan.append(data_unnorm_notnan[idx])
-            data_notnan_without_first_data_nan.append(data_notnan[idx])
             data_for_rnn_x_without_first_data_nan.append(data_for_rnn_x[idx])
-            data_for_rnn_y_without_first_data_nan.append(data_for_rnn_y[idx])
     # len(data_for_rnn_x_without_first_data_nan)
-    data_unnorm_notnan = data_unnorm_notnan_without_first_data_nan
-    data_notnan = data_notnan_without_first_data_nan
     data_for_rnn_x = data_for_rnn_x_without_first_data_nan
-    data_for_rnn_y = data_for_rnn_y_without_first_data_nan
+    len(data_for_rnn_x)
+    # --------------------------------------------------------------------- #
 
-    data_for_rnn_x[68]
     # data_for_rnn_y[0]
     # --- train setting --- #
     # todo: pre 로 받아온 함수들 정리 ㅡ preprocessing 과 lstm 관련쪽 나눔
@@ -123,7 +104,7 @@ if __name__ == "__main__":
 
     learning_rate = 0.1
     optimizer = torch.optim.Adam(pre.parameters(param), lr=learning_rate)
-    num_iter = 30
+    num_iter = 15
     n = len(data_for_rnn_x)
 
     # --- train --- #
@@ -196,85 +177,34 @@ if __name__ == "__main__":
                 print("Break...!")
                 break
 
-    pre.plot('1', loss_arr)
+pre.plot(loss_arr)
 
-    pre.plot('2', data_x)
+pre.plot(data_x)
 
+pre.plot([x for x in data.data])
 
-    b = True
-    if b == True:
-        data_range = np.max(data_unnorm_notnan_ori) - np.min(data_unnorm_notnan_ori)
-        for idx in range(len(data_for_rnn_x)):
-            data_unnorm_notnan_part = data_unnorm_notnan[idx]
-            data_notnan_part = data_notnan[idx]
-            data = data_for_rnn_x[idx]
-            y = data_for_rnn_y[idx]
+idx = 0
 
-            _, preds, preds_finals = pre.lstm_forward_propagation_with_missing_data(data, param, verbose=False)
-            preds_finals = [x.data[0] for x in preds_finals]
+idx += 10
+data = data_for_rnn_x[idx]
+# y = data_for_rnn_y[idx]
+_, preds, pred_finals = pre.lstm_forward_propagation_with_missing_data(data, param, verbose=False)
+preds = [x.data[0] for x in preds]
+pred_finals = [x.data[0] for x in pred_finals]
 
-            unnorm_preds_finals, _, _ = pre.unnormalize(preds_finals, -0.5, 0.5, min(data_unnorm_notnan_ori), max(data_unnorm_notnan_ori))
-            unnorm_data, _, _ = pre.unnormalize(list(data.data), -0.5, 0.5, min(data_unnorm_notnan_ori), max(data_unnorm_notnan_ori))
-            unnorm_data_notnan_part = min(data_unnorm_notnan_ori) + ((data_notnan_part - (-0.5)) / (0.5 - -0.5)) * (max(data_unnorm_notnan_ori) - min(data_unnorm_notnan_ori))
+# todo: 왜 그림이 얼추 나오는 것일까... -_- t+1 일 예측했는데 ...?
 
-            print(unnorm_data_notnan_part)
+# pre.plot(preds_time_minus_1, color="black", is_show=False)
+# # pre.plot(preds, color="crimson", is_show=False)
+# pre.plot(list(data.data), is_show=True)
 
-            preds_finals_variable = Variable(torch.DoubleTensor(unnorm_preds_finals), requires_grad=False)
+pre.plot(pred_finals, color="xkcd:green", is_show=False)
+# pre.plot(list(data.data), is_show=True)
+pre.plot(list(data.data[next_time:]), color="black", is_show=True)
 
-            #todo:RMSE 가 두배로 나오고 있음 수정해야 함
-            RMSE = (torch.sum((preds_finals_variable - unnorm_data_notnan_part).pow(2)) / len(unnorm_data_notnan_part)).sqrt()
-            NRMSE = RMSE / data_range
-
-            print('RMSE:', RMSE.data[0], ', NRMSE:', NRMSE.data[0])
-
-
-            plt.figure(figsize=(8,4))
-
-            plt.title('IDX:' + str(idx) + ', RMSE:' + str(RMSE.data[0]) + ', NRMSE:' + str(NRMSE.data[0]))
-            plt.plot(list(data_unnorm_notnan_part.data)[1:], color="orange")
-            plt.plot(unnorm_preds_finals, color="red")
-            plt.plot(unnorm_data[1:], color="xkcd:azure")
-            plt.grid(True)
-
-            plt.savefig('C:\\_data\\lstm_sine_plot\\' + str(idx) + '.png', bbox_inches='tight')
-
-            plt.show()
-
-        # --- param 변화 확인 --- #
-        pre.print_param(param)
-        pre.print_grad(param)
-
-
-    data_range = np.max(data_unnorm_notnan_ori) - np.min(data_unnorm_notnan_ori)
-
-
-
-    _, preds, preds_finals = pre.lstm_forward_propagation_with_missing_data(Variable(torch.DoubleTensor(data_x)), param, verbose=False)
-    preds_finals = [x.data[0] for x in preds_finals]
-
-    unnorm_data_x, _, _ = pre.unnormalize(data_x, -0.5, 0.5, min(data_unnorm_notnan_ori), max(data_unnorm_notnan_ori))
-    unnorm_preds_finals, _, _ = pre.unnormalize(preds_finals, -0.5, 0.5, min(data_unnorm_notnan_ori), max(data_unnorm_notnan_ori))
-
-    plt.figure(figsize=(20,4))
-    plt.plot(unnorm_data_x[1:], color="xkcd:azure", linewidth=2)
-    plt.plot(unnorm_preds_finals, color="red", linewidth=1)
-    plt.grid(True)
-
-    plt.savefig('C:\\_data\\lstm_sine_plot\\sine_all.png', bbox_inches='tight')
-
-    plt.show()
-
-
-    # --- param 변화 확인 --- #
-    pre.print_param(param)
-    pre.print_grad(param)
-
-    df_sine['Removed'] = unnorm_data_x
-    df_sine['Pred'] = list([np.nan]) + unnorm_preds_finals[:-1]
-
-    df_sine.to_csv('D:\\data_sine_all.csv')
-
-
+# --- param (+변화) 확인 --- #
+pre.print_param(param)
+pre.print_grad(param)
 
 
 
