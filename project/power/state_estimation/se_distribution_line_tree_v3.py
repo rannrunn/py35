@@ -20,6 +20,7 @@ class Tree(object):
         self.sw_loc = dict_sw_info['sw_loc']
         self.dl_id = dict_sw_info['dl_id']
         self.sw_id_f = dict_sw_info['sw_id_f']
+        self.frtu_addr = dict_sw_info['frtu_addr']
         self.list_detail_sw_id = []
         self.list_detail_sw_link_info = []
         self.children = []
@@ -32,6 +33,9 @@ class Tree(object):
         # 위치 관련 변수
         self.coordinate = []
         self.direction = ''
+
+        # 구간 관련 변수
+        self.section_name = ''
 
 
     def __repr__(self):
@@ -90,10 +94,13 @@ class DL(object):
         self.dl_name = self.df_dl.loc[df_dl['dl_id'] == dl_id, 'dl_name'].values[0]
         self.cb_id = self.df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id'].values[0]
         self.dl_list_sw = []
-        self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_tree_info(str(cb_id), 0), self.set_dict_sw_info('1', self.cb_id, '', self.dl_id, np.nan))
+        # CB 의 frtu_addr 은 9999999 로 세팅
+        self.dl_tree = self.set_dl_tree_list(df_dl, df_sec, df_sw_frtu, self.set_dict_tree_info(str(cb_id), 0), self.set_dict_sw_info('1', self.cb_id, 'CB', self.dl_id, np.nan, 9999999))
         # self.dl_sw_count
 
         self.list_direction = ['RDUX', 'DRLX', 'LDUX', 'URLX']
+
+        self.flag_sw_exceed = False
 
 
     def __repr__(self):
@@ -128,8 +135,8 @@ class DL(object):
         return self.set_dict_tree_info(name, depth)
 
 
-    def set_dict_sw_info(self, sw_flag, sw_id, sw_loc, dl_id, sw_id_f):
-        return dict({'sw_flag':sw_flag, 'sw_id':sw_id, 'sw_loc':sw_loc, 'dl_id':dl_id, 'sw_id_f':sw_id_f})
+    def set_dict_sw_info(self, sw_flag, sw_id, sw_loc, dl_id, sw_id_f, frtu_addr):
+        return dict({'sw_flag':sw_flag, 'sw_id':sw_id, 'sw_loc':sw_loc, 'dl_id':dl_id, 'sw_id_f':sw_id_f, 'frtu_addr':frtu_addr})
 
 
     def set_sw_info(self, sw_id, df_sw_frtu, dl_id, sw_id_f):
@@ -139,6 +146,7 @@ class DL(object):
         sw_loc = ''
         sw_dl_id = dl_id
         sw_id_f = sw_id_f
+        frtu_addr = 0
 
         df_local_sw_frtu = df_sw_frtu[(df_sw_frtu['sw_id'] == sw_id) & (df_sw_frtu['sw_id'].notnull())]
         sr_sw_id = pd.DataFrame()
@@ -148,16 +156,17 @@ class DL(object):
             sw_loc = df_local_sw_frtu['sw_loc'].values[0]
             sw_loc = sw_loc[:sw_loc.find('(')] if sw_loc.find('(') > -1 else sw_loc
             sr_sw_id = df_sw_frtu[df_sw_frtu['sw_loc'].apply(lambda x: x[:x.find('(')] if x.find('(') > -1 else x) == sw_loc]['sw_id']
+            frtu_addr = df_local_sw_frtu['frtu_addr'].values[0]
 
         # 다회로 개폐기의 경우 -> 2
         if len(sr_sw_id) > 1:
-            result = self.set_dict_sw_info('2', sw_id, sw_loc, sw_dl_id, sw_id_f)
+            result = self.set_dict_sw_info('2', sw_id, sw_loc, sw_dl_id, sw_id_f, frtu_addr)
         # 싱글 개폐기 중 스위치 id 가 없는 경우 -> 3
         elif np.isnan(sw_id):
-            result = self.set_dict_sw_info('3', sw_id, sw_loc, sw_dl_id, sw_id_f)
+            result = self.set_dict_sw_info('3', sw_id, sw_loc, sw_dl_id, sw_id_f, frtu_addr)
         # 싱글 개폐기의 경우 -> 1
         else:
-            result = self.set_dict_sw_info('1', sw_id, sw_loc, sw_dl_id, sw_id_f)
+            result = self.set_dict_sw_info('1', sw_id, sw_loc, sw_dl_id, sw_id_f, frtu_addr)
         return result
 
 
@@ -187,9 +196,6 @@ class DL(object):
             # if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
             #     return tree
 
-            if sw_id == 2118 or sw_id == 28420 :
-                return tree
-
             for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id]['sw_id_b']:
                 # dict_sw_info 의 sw_id_f 는 for 문에서 나온 sw_id_b 이다.
                 dict_next_sw_info = self.set_sw_info(sw_id_b, df_sw_frtu, sw_dl_id, sw_id)
@@ -212,9 +218,6 @@ class DL(object):
             # if not np.isnan(sw_dl_id) and sw_dl_id != self.dl_id:
             #     return tree
 
-            if sw_id == 2118 or sw_id == 28420 :
-                return tree
-
             for sw_id_detail in sr_sw_id:
                 for sw_id_b in df_sec[df_sec['sw_id_f'] == sw_id_detail]['sw_id_b']:
                     # dict_sw_info 의 sw_id_f 는 for 문에서 나온 sw_id_detail 이다.
@@ -233,29 +236,29 @@ class DL(object):
         return tree
 
 
-    def search(self, Tree):
-        print(Tree)
-        if Tree.children is not None:
-            for child in Tree.children:
+    def search(self, tree):
+        print(tree)
+        if tree.children is not None:
+            for child in tree.children:
                 self.search(child)
 
 
-    def get_tree_from_name(self, list_tree, Tree, search_name):
-        if Tree.name == search_name:
-            list_tree.append(Tree)
-        if Tree.children is not None:
-            for child in Tree.children:
+    def get_tree_from_name(self, list_tree, tree, search_name):
+        if tree.name == search_name:
+            list_tree.append(tree)
+        if tree.children is not None:
+            for child in tree.children:
                 list_tree = self.get_tree_from_name(list_tree, child, search_name)
         return list_tree
 
 
-    def set_max_child_depth(self, list_depth, Tree):
-        if Tree.children is not None:
-            for child in Tree.children:
+    def set_max_child_depth(self, list_depth, tree):
+        if tree.children is not None:
+            for child in tree.children:
                 list_depth = self.set_max_child_depth(list_depth, child)
         # 차일드가 없을 경우 max_child_depth 는 0 => coordinate 를 계산할 때 max 함수를 사용하기 위함
-        Tree.max_child_depth = max(list_depth) if len(list_depth) > 0 else 0
-        list_depth.append(Tree.depth)
+        tree.max_child_depth = max(list_depth) if len(list_depth) > 0 else 0
+        list_depth.append(tree.depth)
         return list_depth
 
     def insertionSort(self, x):
@@ -279,16 +282,20 @@ class DL(object):
     # LDU
     # coordinate_f : x, y
     # direction : RIGHT, DOWN, LEFT, UP
-    def set_coordinate(self, Tree, coordinate, direction):
-        Tree.coordinate = coordinate
-        Tree.direction = direction
-        if Tree.children is not None:
+    def set_coordinate(self, tree, coordinate, direction):
+        tree.coordinate = coordinate
+        tree.direction = direction
+        if tree.children is not None:
             list_max_child_depth = []
-            for child in Tree.children:
+            for child in tree.children:
                 list_max_child_depth.append(child.max_child_depth)
             list_sort = self.insertionSort(list_max_child_depth)
             for item_dir in self.list_direction:
                 if item_dir[0] == direction:
+                    if len(list_sort) > 4:
+                        print('길이 초과 : ', len(list_sort))
+                        self.flag_sw_exceed = True
+                        break
                     for idx, val in enumerate(list_sort):
                         next_coordinate = []
                         if item_dir[idx] == 'R':
@@ -301,14 +308,37 @@ class DL(object):
                             next_coordinate = [coordinate[0], coordinate[1] + 1]
                         elif item_dir[idx] == 'X':
                             next_coordinate = [coordinate[0] + 10, coordinate[1] + 10]
-                        self.set_coordinate(Tree.children[val], next_coordinate, item_dir[idx])
+                        self.set_coordinate(tree.children[val], next_coordinate, item_dir[idx])
 
 
-    def print_coordinate(self, Tree):
-        print('Coordinate:', Tree.coordinate, ', Tree Name:', Tree.name, 'Detail SW ID:', Tree.list_detail_sw_id, 'SW ID F', Tree.sw_id_f)
-        if Tree.children is not None:
-            for child in Tree.children:
+    def print_coordinate(self, tree):
+        print('Coordinate:', tree.coordinate, ', Switch Name:', tree.name, 'Detail SW ID:', tree.list_detail_sw_id, 'SW ID F', tree.sw_id_f)
+        if tree.children is not None:
+            for child in tree.children:
                 self.print_coordinate(child)
+
+
+    # 구간부하 계산을 위한 구간 설정
+    # 1. 자동화 개폐기를 기준으로 구간을 나눔 : 1, 3, frtu_addr
+    # 2.
+    def set_section_name(self, tree, section_name):
+        if tree.frtu_addr != 0:
+            tree.section_name = tree.sw_loc
+            section_name = tree.sw_loc
+        else:
+            tree.section_name = section_name
+
+        if tree.children is not None:
+            for child in tree.children:
+                self.set_section_name(child, section_name)
+
+
+    def print_section_name(self, tree):
+        print('Section Name : ', tree.section_name, 'Switch Name', tree.name)
+        if tree.children is not None:
+            for child in tree.children:
+                self.print_section_name(child)
+
 
 
 if __name__ == '__main__':
@@ -317,7 +347,7 @@ if __name__ == '__main__':
     dir_distribution_line = dir + '\\distribution_line'
     dir_distribution_line_topology = dir_distribution_line + '\\topology'
 
-    x1 = pd.ExcelFile(os.path.join(dir, 'das_data_20180529.xls'))
+    x1 = pd.ExcelFile(os.path.join(dir, 'das_data_20180706.xls'))
 
     if not os.path.isdir(dir_distribution_line_topology):
         os.makedirs(dir_distribution_line_topology)
@@ -335,14 +365,15 @@ if __name__ == '__main__':
 
 
     df_dl_line_count = pd.DataFrame(columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
-
+    list_sw_exceed_dl = []
     for idx in range(len(df_dl)):
 
         dl_id = df_dl.loc[idx, 'dl_id']
         dl_name = df_dl.loc[idx, 'dl_name']
 
-        if dl_id != 40:
+        if dl_id != 9:
             continue
+
 
         cb_id = None
         if len(df_dl.loc[df_dl['dl_id'] == dl_id, 'cb_id']) > 0:
@@ -366,12 +397,25 @@ if __name__ == '__main__':
         print('Set Max Child Depth Time', time.time() - start)
 
         start = time.time()
-        list_depth = dl.set_coordinate(dl.dl_tree, [0, 0], 'R')
+        dl.set_coordinate(dl.dl_tree, [0, 0], 'R')
         print('Set Coordinate Time', time.time() - start)
+
+        if dl.flag_sw_exceed == True:
+            list_sw_exceed_dl.append(dl.dl_id)
 
         start = time.time()
         dl.print_coordinate(dl.dl_tree)
         print('Get Coordinate Time', time.time() - start)
+
+
+        start = time.time()
+        dl.set_section_name(dl.dl_tree, '')
+        print('Set Section Name Time', time.time() - start)
+
+
+        start = time.time()
+        dl.print_section_name(dl.dl_tree)
+        print('Print Section Name Time', time.time() - start)
 
 
         # df_temp = pd.DataFrame([[dl_id, dl_name, cb_id, len(list_dl)]], columns=['DL_ID', 'DL_NAME', 'CB_ID', 'COUNT'])
@@ -379,8 +423,17 @@ if __name__ == '__main__':
 
         print('idx: ' + str(idx) + ', dl_id: ' + str(dl_id) + ', dl_name: ' + dl_name)
 
+    print('초과 스위치가 존재하는 DL : ', list_sw_exceed_dl)
+
     if not os.path.isdir(dir):
         os.makedirs(dir)
     df_dl_line_count.to_csv(os.path.join(dir_distribution_line, 'dl_sw_count.csv'), index=False)
+
+
+
+
+# 파일명 : das_data_20180706.xls
+# 파일 DB : 대덕유성지사 DAS 데이터
+# 1. 초과 스위치가 존재하는 DL : [16, 30, 146, 147, 148, 193, 194, 195, 240, 241, 245]
 
 
