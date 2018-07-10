@@ -6,6 +6,7 @@ pd.set_option('display.expand_frame_repr', False)
 pd.set_option('max_columns', 30)
 import os
 import numpy as np
+import copy
 import time
 
 
@@ -36,6 +37,7 @@ class Tree(object):
 
         # 구간 관련 변수
         self.section_name = ''
+        self.list_section_end = []
 
 
     def __repr__(self):
@@ -321,23 +323,35 @@ class DL(object):
     # 구간부하 계산을 위한 구간 설정
     # 1. 자동화 개폐기를 기준으로 구간을 나눔 : 1, 3, frtu_addr
     # 2.
-    def set_section_name(self, tree, section_name):
+    def set_section_info(self, tree, section_name, list_parent_section_end):
+        # 부하가 측정되는 개폐기를 frtu_addr 의 데이터 여부가 아닌 개폐기 종류를 통해 판단해야 할 듯 함
         if tree.frtu_addr != 0:
             tree.section_name = tree.sw_loc
             section_name = tree.sw_loc
+            list_parent_section_end.append(tree.section_name)
+            list_section_end = []
         else:
             tree.section_name = section_name
+            list_section_end = list_parent_section_end
 
         if tree.children is not None:
             for child in tree.children:
-                self.set_section_name(child, section_name)
+                self.set_section_info(child, section_name, list_section_end)
+
+        # 마찬가지로 부하가 측정되는 개폐기 조건을 수정해야 함
+        if tree.frtu_addr != 0:
+            tree.list_section_end = copy.deepcopy(list_section_end)
+
+
 
 
     def print_section_name(self, tree):
-        print('Section Name : ', tree.section_name, 'Switch Name', tree.name)
+        print('Section Name : ', tree.section_name, ', Switch Name', tree.name, ', Section End List : ', tree.list_section_end)
         if tree.children is not None:
             for child in tree.children:
                 self.print_section_name(child)
+
+
 
 
 
@@ -347,7 +361,9 @@ if __name__ == '__main__':
     dir_distribution_line = dir + '\\distribution_line'
     dir_distribution_line_topology = dir_distribution_line + '\\topology'
 
-    x1 = pd.ExcelFile(os.path.join(dir, 'das_data_20180706.xls'))
+    x1 = pd.ExcelFile(os.path.join(dir, '20180706_das_data.xls'))
+    # x2 = pd.ExcelFile(os.path.join(dir, '20180710_sw_load.csv'))
+    # x3 = pd.ExcelFile(os.path.join(dir, '20180710_section_load.csv'))
 
     if not os.path.isdir(dir_distribution_line_topology):
         os.makedirs(dir_distribution_line_topology)
@@ -371,7 +387,7 @@ if __name__ == '__main__':
         dl_id = df_dl.loc[idx, 'dl_id']
         dl_name = df_dl.loc[idx, 'dl_name']
 
-        if dl_id != 9:
+        if dl_id != 43:
             continue
 
 
@@ -409,7 +425,7 @@ if __name__ == '__main__':
 
 
         start = time.time()
-        dl.set_section_name(dl.dl_tree, '')
+        dl.set_section_info(dl.dl_tree, '', [])
         print('Set Section Name Time', time.time() - start)
 
 
