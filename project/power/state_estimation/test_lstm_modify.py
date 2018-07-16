@@ -1,74 +1,106 @@
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-import torch.nn.functional as F
-import time
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
-epochs = 1000
-output_size = 1
-learning_rate = 0.01
-beta1 = 0.5
-beta2 = 0.999
+data_csv = pd.read_csv('./data.csv', usecols=[1])
 
-input_size = 9
-hidden_size = 10
-batch_size = 20
 
-class LSTMCell(nn.Module):
+plt.plot(data_csv)
 
-    def __init__(self, input_size, hidden_size):
-        super(LSTMCell, self).__init__()
-        self.hidden_size=hidden_size
-        self.lin = nn.Linear( input_size+hidden_size , 4*hidden_size )
 
-    def forward(self, x, state0):
-        h0,c0=state0
-        x_and_h0 = torch.cat((x,h0), 1)
-        u=self.lin(x_and_h0)
-        i=F.sigmoid( u[ : , 0*self.hidden_size : 1*self.hidden_size ] )
-        f=F.sigmoid( u[ : , 1*self.hidden_size : 2*self.hidden_size ] )
-        g=F.tanh(    u[ : , 2*self.hidden_size : 3*self.hidden_size ] )
-        o=F.sigmoid( u[ : , 3*self.hidden_size : 4*self.hidden_size ] )
-        c= f*c0 + i*g
-        h= o*F.tanh(c)
-        return (h,c)
-
-# construct LSTM Cell
-rnn = LSTMCell(input_size, hidden_size)
-rnn.cuda()
-
-a = np.arange(0.01, 10.01, 0.01)
-b = a.reshape(-1, 10)
-
-# generate fake data
-h0=torch.rand(batch_size,hidden_size).cuda()
-c0=torch.rand(batch_size,hidden_size).cuda()
-hh0=Variable(h0,requires_grad=True)
-cc0=Variable(c0,requires_grad=True)
-
-mceloss = torch.nn.MSELoss()
-optimizer = torch.optim.Adam(rnn.parameters(), lr=learning_rate, betas=(beta1, beta2))
-
-# run the cell 1000 times forward and backward
-t0=time.time()
-for epoch in range(epochs):
-    for batch in range(0, len(a), batch_size):
-        data = torch.Tensor(b[batch:batch + 20,:]).cuda()
-        xx=Variable(data,requires_grad=True)
-
-        optimizer.zero_grad()
-        for _ in range(input_size):
-            print(xx.size())
-            print(hh0.size())
-            print(cc0.size())
-            hh0,cc0=rnn(xx, (hh0,cc0)  )
-        loss = mceloss(hh0, hh0)
-        loss.backward()
-        optimizer.step()
-
-print('time in s : '+ str(time.time()-t0) )
+data_csv = data_csv.dropna()
+dataset = data_csv.values
+dataset = dataset.astype('float32')
+max_value = np.max(dataset)
+min_value = np.min(dataset)
+scalar = max_value - min_value
+dataset = list(map(lambda x: x / scalar, dataset))
 
 
 
+def create_dataset(dataset, look_back=2):
+    dataX, dataY = [], []
+    for i in range(len(dataset) - look_back):
+        a = dataset[i:(i + look_back)]
+        dataX.append(a)
+        dataY.append(dataset[i + look_back])
+    return np.array(dataX), np.array(dataY)
 
+
+data_X, data_Y = create_dataset(dataset)
+
+
+train_size = int(len(data_X) * 0.7)
+test_size = len(data_X) - train_size
+train_X = data_X[:train_size]
+train_Y = data_Y[:train_size]
+test_X = data_X[train_size:]
+test_Y = data_Y[train_size:]
+
+
+
+import torch
+
+train_X = train_X.reshape(-1, 1, 2)
+train_Y = train_Y.reshape(-1, 1, 1)
+test_X = test_X.reshape(-1, 1, 2)
+
+train_x = torch.from_numpy(train_X)
+train_y = torch.from_numpy(train_Y)
+test_x = torch.from_numpy(test_X)
+
+
+from torch import nn
+from torch.autograd import Variable
+
+
+class lstm_reg(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size=1, num_layers=2):
+        super(lstm_reg, self).__init__()
+
+        self.rnn = nn.LSTM(input_size, hidden_size, num_layers) # rnn
+        self.reg = nn.Linear(hidden_size, output_size) # 回归
+
+    def forward(self, x):
+        x, _ = self.rnn(x) # (seq, batch, hidden)
+        s, b, h = x.shape
+        x = x.view(s*b, h) # 转换成线性层的输入格式
+        x = self.reg(x)
+        x = x.view(s, b, -1)
+        return x
+
+net = lstm_reg(2, 4)
+
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
+
+
+
+for e in range(1000):
+    var_x = Variable(train_x)
+    var_y = Variable(train_y)
+    # 前向传播
+    out = net(var_x)
+    loss = criterion(out, var_y)
+    # 反向传播
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    if (e + 1) % 100 == 0: # 每 100 次输出结果
+        print('Epoch: {}, Loss: {:.5f}'.format(e + 1, loss.data[0]))
+
+
+net = net.eval()
+
+data_X = data_X.reshape(-1, 1, 2)
+data_X = torch.from_numpy(data_X)
+var_data = Variable(data_X)
+pred_test = net(var_data)
+
+
+pred_test = pred_test.view(-1).data.numpy()
+
+
+plt.plot(pred_test, 'r', label='prediction')
+plt.plot(dataset, 'b', label='real')
+plt.legend(loc='best')
