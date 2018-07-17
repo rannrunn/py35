@@ -141,8 +141,7 @@ def forecast(stl, fc_func, steps=10, seasonal=False, **fc_func_kwargs):
         # roll seasonal signal to matching phase
         rolled_period_averages = np.roll(stl.period_averages, -seasonal_ix)
         # tile as many time as needed to reach "steps", then truncate
-        tiled_averages = np.tile(rolled_period_averages, 
-                                 (steps // len(stl.period_averages) + 1))[:steps]
+        tiled_averages = np.tile(rolled_period_averages, (steps // len(stl.period_averages) + 1))[:steps]
         # add seasonal values to previous forecast
         forecast_array += tiled_averages                
         col_name += '+seasonal'

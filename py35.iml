@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/project/power/iot/iot_analysis" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/project/power/state_estimation" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/project/power/state_estimation/tensorflow_lstm" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/source_test/STLDecompose-master" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/project/power/state_estimation/STLDecompose-master" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

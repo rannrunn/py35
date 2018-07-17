@@ -12,7 +12,7 @@ from stldecompose.forecast_funcs import drift
 from stldecompose.forecast_funcs import mean
 from stldecompose.forecast_funcs import seasonal_naive
 
-
+period = 365
 
 # We'll use some of the data that comes pre-packaged with `statsmodels` to demonstrate the library functionality. The data set below comprises incomplete, daily measurements of CO2 levels in Hawaii. 
 
@@ -51,7 +51,7 @@ plt.close()
 # 
 # For example, with daily observations and large annual cycles, `period=365`. For hourly observations with large daily cycles, `period=24`. Some inspection, and trial and error may be helpful.
 
-stl = decompose(obs, period=365)
+stl = decompose(obs, period=period)
 
 
 
@@ -60,6 +60,7 @@ stl = decompose(obs, period=365)
 # We inherit the built-in `.plot()` method on the object.
 
 stl.plot();
+plt.title('stl')
 plt.show()
 plt.close()
 
@@ -79,7 +80,7 @@ short_obs = obs.head(10000)
 
 
 # apply the decomp to the truncated observation
-short_stl = decompose(short_obs, period=365)
+short_stl = decompose(short_obs, period=period)
 
 short_stl
 
