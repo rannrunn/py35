@@ -155,7 +155,7 @@ def generate_output(args,epoch, model, gen_dataset, disp_uncertainty=True,startP
         #     lowerlim95 = preprocess_data.reconstruct(lowerlim95.data.cpu().numpy(),TimeseriesData.mean,TimeseriesData.std)
 
         plt.figure(figsize=(15,5))
-        for i in range(target.size(-1)):
+        for i in range(1):
             plt.plot(target[:,:,i].numpy(), label='Target'+str(i),
                      color='black', marker='.', linestyle='--', markersize=1, linewidth=0.5)
             plt.plot(range(startPoint), outSeq[:startPoint,i].numpy(), label='1-step predictions for target'+str(i),
@@ -212,7 +212,7 @@ def train(args, model, train_dataset,epoch):
         total_loss = 0
         start_time = time.time()
         hidden = model.init_hidden(args.batch_size)
-        print(train_dataset)
+
         for batch, i in enumerate(range(0, train_dataset.size(0) - 1, args.bptt)):
             inputSeq, targetSeq = get_batch(args,train_dataset, i)
             # inputSeq: [ seq_len * batch_size * feature_size ]
