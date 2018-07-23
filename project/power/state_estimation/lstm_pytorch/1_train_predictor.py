@@ -78,11 +78,19 @@ train_dataset = TimeseriesData.batchify(args,TimeseriesData.trainData, args.batc
 test_dataset = TimeseriesData.batchify(args,TimeseriesData.testData, args.eval_batch_size)
 gen_dataset = TimeseriesData.batchify(args,TimeseriesData.testData, 1)
 
+# print(TimeseriesData)
+# print('테스트 데이터셋 시작')
+# print(TimeseriesData.trainData)
+# print('테스트 데이터셋 종료')
+# print('GEN 데이터셋 시작')
+# print(TimeseriesData.testData)
+# print('GEN 데이터셋 종료')
 
 ###############################################################################
 # Build the model
 ###############################################################################
 feature_dim = TimeseriesData.trainData.size(1)
+print(feature_dim)
 model = model.RNNPredictor(rnn_type = args.model,
                            enc_inp_size=feature_dim,
                            rnn_inp_size = args.emsize,
@@ -169,8 +177,8 @@ def generate_output(args,epoch, model, gen_dataset, disp_uncertainty=True,startP
         plt.text(startPoint-500+10, target.min(), 'Epoch: '+str(epoch),fontsize=15)
         save_dir = Path('result',args.data,args.filename).with_suffix('').joinpath('fig_prediction')
         save_dir.mkdir(parents=True,exist_ok=True)
-        plt.savefig(save_dir.joinpath('fig_epoch'+str(epoch)).with_suffix('.png'))
-        #plt.show()
+        # plt.savefig(save_dir.joinpath('fig_epoch'+str(epoch)).with_suffix('.png'))
+        plt.show()
         plt.close()
         return outSeq
 
@@ -204,6 +212,7 @@ def train(args, model, train_dataset,epoch):
         total_loss = 0
         start_time = time.time()
         hidden = model.init_hidden(args.batch_size)
+        print(train_dataset)
         for batch, i in enumerate(range(0, train_dataset.size(0) - 1, args.bptt)):
             inputSeq, targetSeq = get_batch(args,train_dataset, i)
             # inputSeq: [ seq_len * batch_size * feature_size ]

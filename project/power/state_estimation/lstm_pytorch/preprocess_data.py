@@ -42,6 +42,7 @@ class PickleDataLoad(object):
         """ Read, Standardize, Augment """
 
         with open(str(path), 'rb') as f:
+            print(str(path))
             data = torch.FloatTensor(pickle.load(f))
             label = data[:,-1]
             data = data[:,:-1]
