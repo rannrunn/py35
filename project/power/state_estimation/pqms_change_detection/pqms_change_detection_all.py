@@ -6,6 +6,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import os
 
 import statsmodels.api as sm
@@ -56,7 +57,7 @@ def regularization(df, col, col_reg):
 
 def plot_pqms_decomposition(period):
     dir_source = 'C:\\_data\\부하데이터'
-    dir_output = 'C:\\_data\\pqms_change_detection_all\\' + str(period) + '\\'
+    dir_output = 'C:\\_data\\pqms_change_detection_all_resid\\' + str(period) + '\\'
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -79,9 +80,48 @@ def plot_pqms_decomposition(period):
                 df_day_min = df_temp.resample('D').min()
                 data_decom = sm.tsa.seasonal_decompose(df_4H_mean['load'], freq=period)
 
-                df_4H_mean = regularization(df_4H_mean, 'load', 'reg')
+                df_data_decom = pd.DataFrame({"observed":data_decom.observed})
+                df_data_decom['trend'] = data_decom.trend
+                df_data_decom['detrend'] = df_data_decom['observed'] - df_data_decom['trend']
+                df_data_decom['seasonal'] = data_decom.seasonal
+                df_data_decom['resid'] = data_decom.resid
+
+                df_data_decom = regularization(df_data_decom, 'resid', 'reg_resid')
+                th_reg_resid_max = df_data_decom['reg_resid'].mean() + (df_data_decom['reg_resid'].std() * 2)
+                th_reg_resid_min = df_data_decom['reg_resid'].mean() - (df_data_decom['reg_resid'].std() * 2)
+                df_data_decom['diff_observed'] = df_data_decom['observed'].diff().abs()
+                df_data_decom['diff_reg_resid'] = df_data_decom['reg_resid'].diff().abs()
+                df_data_decom['resid_change_detection'] = 0
+                df_data_decom.loc[(df_data_decom['reg_resid'] > th_reg_resid_max) | (df_data_decom['reg_resid'] < th_reg_resid_min), 'resid_change_detection'] = 1
+
+
+
+                # # STL Decomposition Data Plot
+                # plt.plot(df_data_decom['observed'], label='observed')
+                # plt.plot(df_data_decom['trend'], label='trend')
+                # plt.plot(df_data_decom['detrend'], label='detrend')
+                # plt.plot(df_data_decom['seasonal'], label='seasonal')
+                # plt.plot(df_data_decom['resid'], label='resid')
+                # plt.legend()
+                # plt.show()
+                # plt.close()
+                #
+                # # 정규화 데이터 플롯
+                # plt.plot(df_data_decom['reg_resid'], label='reg_resid')
+                # plt.legend()
+                # plt.show()
+                # plt.close()
+                #
+                # # 정규화 데이터 플롯
+                # plt.plot(df_data_decom['resid_change_detection'], label='resid_change_detection')
+                # plt.legend()
+                # plt.show()
+                # plt.close()
+
+
+                df_4H_mean = regularization(df_4H_mean, 'load', 'reg_load')
                 df_4H_mean['diff_load'] = df_4H_mean['load'].diff().abs()
-                df_4H_mean['diff_reg_load'] = df_4H_mean['reg'].diff().abs()
+                df_4H_mean['diff_reg_load'] = df_4H_mean['reg_load'].diff().abs()
                 df_4H_mean['mean_change_detection'] = 0
                 # 4시간 부하 데이터가 이전 시점보다 특정 비율을 초과하여 변동한 시점 탐지
                 df_4H_mean.loc[(df_4H_mean['diff_reg_load'].abs() > 0.3) & (df_4H_mean['diff_load'].abs() > 2000), 'mean_change_detection'] = 1
@@ -93,9 +133,9 @@ def plot_pqms_decomposition(period):
 
                 # 일별 부하 데이터의 최대값이 임계치를 초과하여 변동한 시점 탐지
                 # 최소값은 거의 일정하므로 최대값만으로 탐지하면 될 것 같음
-                df_day_max = regularization(df_day_max, 'load', 'reg')
+                df_day_max = regularization(df_day_max, 'load', 'reg_load')
                 df_day_max['diff_load'] = df_day_max['load'].diff().abs()
-                df_day_max['diff_reg_load'] = df_day_max['reg'].diff().abs()
+                df_day_max['diff_reg_load'] = df_day_max['reg_load'].diff().abs()
                 df_day_max['max_change_detection'] = 0
                 df_day_max.loc[(df_day_max['diff_reg_load'].abs() > 0.2) & (df_day_max['diff_load'].abs() > 2000), 'max_change_detection'] = 1
 
@@ -103,12 +143,14 @@ def plot_pqms_decomposition(period):
                 df_4H_mean['date'] = df_4H_mean.index.to_series().dt.strftime('%Y-%m-%d').astype(str)
                 df_4H_mean.reindex([idx for idx in range(len(df_4H_mean))])
 
+
                 fig = plt.figure(figsize=(22,10))
-                ax1 = fig.add_subplot(4,3,1)
-                ax2 = fig.add_subplot(4,3,2)
+                gs = gridspec.GridSpec(4, 3)
+                ax1 = fig.add_subplot(gs[0, 0])
+                ax2 = fig.add_subplot(gs[0:2, 1])
                 ax3 = fig.add_subplot(4,3,3)
                 ax4 = fig.add_subplot(4,3,4)
-                ax5 = fig.add_subplot(4,3,5)
+
                 ax6 = fig.add_subplot(4,3,6)
                 ax7 = fig.add_subplot(4,3,7)
                 ax8 = fig.add_subplot(4,3,8)
@@ -117,56 +159,65 @@ def plot_pqms_decomposition(period):
                 ax11 = fig.add_subplot(4,3,11)
                 ax12 = fig.add_subplot(4,3,12)
 
-                ax1.plot(df_4H_mean['load'])
-                ax1.plot(data_decom.trend)
-                ax1.set_ylabel('Raw Data & Trend')
+
+
+
+                ax1.plot(df_4H_mean['load'], label='observed')
+                ax1.plot(data_decom.trend, label='trend')
                 # ax1.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax1.legend()
 
-                ax4.plot(df_4H_mean['load'] - data_decom.trend)
-                ax4.set_ylabel('Detrend Data')
+                ax4.plot(df_4H_mean['load'] - data_decom.trend, label='detrend')
                 # ax4.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax4.legend()
 
-                ax7.plot(data_decom.seasonal)
-                ax7.set_ylabel('Seasonal Data')
+                ax7.plot(data_decom.seasonal, label='seasonal')
                 # ax7.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax7.legend()
 
-                ax10.plot(data_decom.resid.abs())
-                ax10.set_ylabel('Residual Data')
+                ax10.plot(data_decom.resid.abs(), label='resid')
                 # ax10.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax10.legend()
 
 
 
 
 
-                ax2.plot(df_4H_mean['diff_load'])
-                ax2.set_ylabel('4H Difference Load Data')
+                ax2.plot(df_data_decom['resid_change_detection'] * df_data_decom['observed'].max(), label='resid_change_detection')
+                ax2.plot(df_data_decom['observed'], label='observed')
+                ax2.plot(df_data_decom['trend'], label='trend')
                 # ax2.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax2.legend()
 
-                ax5.plot(df_4H_mean['diff_reg_load'])
-                ax5.set_ylabel('4H Difference Regular Load Data')
-                ax5.set_ylim(0, 1)
-                # ax5.set_xticklabels(df_4H_mean['date'], rotation=30)
 
-                ax8.plot(df_4H_mean['mean_change_detection'])
-                ax8.set_ylabel('4H Mean Change Detection')
+                ax8.plot(df_data_decom['resid_change_detection'], label='resid_change_detection')
+                ax8.plot(df_data_decom['reg_resid'], label='reg_resid')
+                ax8.set_ylim(0, 1)
                 # ax8.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax8.legend()
+
+                ax11.plot(df_data_decom['resid_change_detection'], label='resid_change_detection')
+                # ax11.set_xticklabels(df_4H_mean['date'], rotation=30)
+                ax11.legend()
 
 
 
 
-
-                ax3.plot(df_day_max['diff_load'])
-                ax3.set_ylabel('Day Difference Load Data')
+                ax3.plot(df_4H_mean['diff_load'])
+                ax3.set_ylabel('4H Difference Load Data')
                 # ax3.set_xticklabels(df_4H_mean['date'], rotation=30)
 
-                ax6.plot(df_day_max['diff_reg_load'])
-                ax6.set_ylabel('Day Difference Regular Load Data')
+                ax6.plot(df_4H_mean['diff_reg_load'])
+                ax6.set_ylabel('4H Difference Regular Load Data')
                 ax6.set_ylim(0, 1)
                 # ax6.set_xticklabels(df_4H_mean['date'], rotation=30)
 
-                ax9.plot(df_day_max['max_change_detection'])
-                ax9.set_ylabel('Day Max Change Detection')
+                ax9.plot(df_4H_mean['mean_change_detection'])
+                ax9.set_ylabel('4H Mean Change Detection')
                 # ax9.set_xticklabels(df_4H_mean['date'], rotation=30)
+
+
+
 
                 plt.legend()
                 plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'))
