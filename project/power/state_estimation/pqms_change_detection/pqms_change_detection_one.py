@@ -8,12 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import os
+import datetime
 
 import statsmodels.api as sm
-from stldecompose.forecast_funcs import drift
-from stldecompose import decompose, forecast
-
-from multiprocessing import Pool
 
 def is_possible(data, col_name='load'):
     # todo: code 정리
@@ -58,6 +55,7 @@ def regularization(df, col, col_reg):
 def plot_pqms_decomposition(period):
     dir_source = 'C:\\_data\\부하데이터'
     dir_output = 'C:\\_data\\pqms_load_decompose_plot_one\\' + str(period) + '\\'
+    colors = ['b', 'o', 'r']
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -72,7 +70,7 @@ def plot_pqms_decomposition(period):
 
 
     bool_possible = is_possible(df_temp, 'load')
-    if bool_possible: #  and filename.find('3상') > -1
+    if bool_possible: # and filename.find('3상') > -1
         df_temp.set_index(pd.to_datetime(df_temp[df_temp.columns[0]]), inplace=True)
         df_4H_mean = df_temp.resample('4H').mean().interpolate('linear')
         df_day_max = df_temp.resample('D').max()
@@ -92,6 +90,34 @@ def plot_pqms_decomposition(period):
         df_data_decom['resid_change_detection'] = 0
         df_data_decom.loc[(df_data_decom['reg_resid'].abs() > th_reg_resid), 'resid_change_detection'] = 1
 
+        df_data_decom['datetime'] = df_data_decom.index.values
+        df_data_decom['weekday'] = df_data_decom['datetime'].dt.weekday
+        df_data_decom['day_of_year'] = df_data_decom['datetime'].dt.dayofyear
+        df_data_decom['day_of_years'] = df_data_decom['datetime'].apply(lambda x: df_data_decom.loc[x, 'day_of_year'] + sum([datetime.date(item, 12, 31).timetuple().tm_yday for item in list(set(df_data_decom['datetime'].dt.year.values)) if item < df_data_decom.loc[x, 'datetime'].year]))
+
+
+        df_data_decom['date_group'] = df_data_decom['datetime'].apply(lambda x: df_data_decom.loc[x, 'day_of_years'] - (df_data_decom.loc[x, 'weekday'] + 1))
+        df_data_decom = df_data_decom[(df_data_decom['date_group'] != df_data_decom['date_group'].min()) & (df_data_decom['date_group'] != df_data_decom['date_group'].max())]
+
+        df_data_decom['data_week_odd'] = df_data_decom.loc[df_data_decom['date_group'] % 2 == 0, 'observed']
+        df_data_decom['data_week_even'] = df_data_decom.loc[df_data_decom['date_group'] % 2 == 1, 'observed']
+
+
+        df_data_decom_des = pd.DataFrame(df_data_decom.groupby('date_group')['observed'].describe())
+        df_data_decom_des['date_group'] = df_data_decom_des.index
+        df_data_decom = pd.merge(df_data_decom, df_data_decom_des, on='date_group', how='left')
+
+        # plt.plot(df_data_decom['observed'])
+        # plt.plot(df_data_decom['weekday'] * 100)
+        # plt.plot(df_data_decom['data_week_odd'], 'b')
+        # plt.plot(df_data_decom['data_week_even'], 'r')
+        # plt.plot(df_data_decom['max'], label='max')
+        # plt.plot(df_data_decom['min'], label='min')
+        # plt.plot(df_data_decom['mean'], label='mean')
+        # plt.plot(df_data_decom['std'], label='std')
+        # plt.legend()
+        # plt.show()
+        # plt.close()
 
 
         # # STL Decomposition Data Plot
@@ -141,6 +167,7 @@ def plot_pqms_decomposition(period):
         df_4H_mean['date'] = df_4H_mean.index.to_series().dt.strftime('%Y-%m-%d').astype(str)
         df_4H_mean.reindex([idx for idx in range(len(df_4H_mean))])
 
+
         fig = plt.figure(figsize=(22,10))
         gs = gridspec.GridSpec(4, 3)
         ax1 = fig.add_subplot(gs[0, 0])
@@ -148,14 +175,13 @@ def plot_pqms_decomposition(period):
         ax3 = fig.add_subplot(4,3,3)
         ax4 = fig.add_subplot(4,3,4)
 
+
         ax6 = fig.add_subplot(4,3,6)
         ax7 = fig.add_subplot(4,3,7)
         ax8 = fig.add_subplot(gs[2:4, 1])
         ax9 = fig.add_subplot(4,3,9)
         ax10 = fig.add_subplot(4,3,10)
         ax12 = fig.add_subplot(4,3,12)
-
-
 
 
         ax1.plot(df_4H_mean['load'], label='observed')
@@ -177,22 +203,40 @@ def plot_pqms_decomposition(period):
 
 
 
+        # plt.plot(df_data_decom['observed'])
+        # plt.plot(df_data_decom['weekday'] * 100)
+        # plt.plot(df_data_decom['data_week_odd'], 'b')
+        # plt.plot(df_data_decom['data_week_even'], 'r')
+        # plt.plot(df_data_decom['max'], label='max')
+        # plt.plot(df_data_decom['min'], label='min')
+        # plt.plot(df_data_decom['mean'], label='mean')
+        # plt.plot(df_data_decom['std'], label='std')
+        # plt.legend()
+        # plt.show()
+        # plt.close()
 
 
-        ax2.plot(df_data_decom['observed'], label='observed')
-        ax2.plot(df_data_decom['trend'], label='trend')
+        ax2.plot(df_data_decom['resid_change_detection'], label='resid_change_detection')
         # ax2.set_xticklabels(df_4H_mean['date'], rotation=30)
         ax2.legend()
+
 
         # ax5.plot(df_data_decom['reg_resid'], label='reg_resid')
         # ax5.set_ylim(0, 1)
         # # ax5.set_xticklabels(df_4H_mean['date'], rotation=30)
         # ax5.legend()
 
-        ax8.plot(df_data_decom['resid_change_detection'], label='resid_change_detection')
+
+        ax8.plot(df_data_decom['observed'], label='observed')
+        ax8.plot(df_data_decom['weekday'] * 100, label='weekday')
+        ax8.plot(df_data_decom['data_week_odd'], 'b', label='data_week_odd')
+        ax8.plot(df_data_decom['data_week_even'], 'r', label='data_week_even')
+        ax8.plot(df_data_decom['max'], label='max')
+        ax8.plot(df_data_decom['min'], label='min')
+        ax8.plot(df_data_decom['mean'], label='mean')
+        ax8.plot(df_data_decom['std'], label='std')
         # ax8.set_xticklabels(df_4H_mean['date'], rotation=30)
         ax8.legend()
-
 
 
 
@@ -211,9 +255,8 @@ def plot_pqms_decomposition(period):
 
 
 
-
         plt.legend()
-        plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'))
+        # plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'))
         plt.show()
         plt.close()
 
