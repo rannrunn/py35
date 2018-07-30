@@ -240,7 +240,7 @@ def plot_pqms_decomposition(period):
                 ax8.plot(df_data_decom['mean'], label='mean')
                 ax8.plot(df_data_decom['std'], label='std')
                 # ax8.set_xticklabels(df_4H_mean['date'], rotation=30)
-                ax8.legend()
+
 
 
 
