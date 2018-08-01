@@ -60,12 +60,12 @@ def plot_pqms_decomposition(period):
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
 
-    filepath = 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID5\금촌_3상.xls'
+    filepath = 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
     root = os.path.dirname(filepath)
     file = os.path.basename(filepath)
 
 
-    df_temp = pd.read_excel('C:\_data\부하데이터\수원경기본부\금촌변전소\ID5\금촌_3상.xls')
+    df_temp = pd.read_excel('C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls')
     df_temp = df_temp.rename(columns={'Unnamed: 1': 'load'})
 
 
@@ -106,6 +106,8 @@ def plot_pqms_decomposition(period):
         df_data_decom_des = pd.DataFrame(df_data_decom.groupby('date_group')['observed'].describe())
         df_data_decom_des['date_group'] = df_data_decom_des.index
         df_data_decom = pd.merge(df_data_decom, df_data_decom_des, on='date_group', how='left')
+
+        df_data_decom.set_index(df_data_decom['datetime'], inplace=True)
 
         # plt.plot(df_data_decom['observed'])
         # plt.plot(df_data_decom['weekday'] * 100)
@@ -187,18 +189,26 @@ def plot_pqms_decomposition(period):
         ax1.plot(df_4H_mean['load'], label='observed')
         ax1.plot(data_decom.trend, label='trend')
         # ax1.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax1.set_xticks(df_data_decom.index[::168])
+        ax1.set_xticklabels(df_data_decom.index[::168], rotation=30)
         ax1.legend()
 
         ax4.plot(df_4H_mean['load'] - data_decom.trend, label='detrend')
         # ax4.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax4.set_xticks(df_data_decom.index[::168])
+        ax4.set_xticklabels(df_data_decom.index[::168], rotation=30)
         ax4.legend()
 
         ax7.plot(data_decom.seasonal, label='seasonal')
         # ax7.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax7.set_xticks(df_data_decom.index[::168])
+        ax7.set_xticklabels(df_data_decom.index[::168], rotation=30)
         ax7.legend()
 
         ax10.plot(data_decom.resid.abs(), label='resid')
         # ax10.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax10.set_xticks(df_data_decom.index[::168])
+        ax10.set_xticklabels(df_data_decom.index[::168], rotation=30)
         ax10.legend()
 
 
@@ -218,6 +228,8 @@ def plot_pqms_decomposition(period):
 
         ax2.plot(df_data_decom['resid_change_detection'], label='resid_change_detection')
         # ax2.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax2.set_xticks(df_data_decom.index[::168])
+        ax2.set_xticklabels(df_data_decom.index[::168], rotation=30)
         ax2.legend()
 
 
@@ -227,15 +239,15 @@ def plot_pqms_decomposition(period):
         # ax5.legend()
 
 
-        ax8.plot(df_data_decom['observed'], label='observed')
-        ax8.plot(df_data_decom['weekday'] * 100, label='weekday')
+        # ax8.plot(df_data_decom['weekday'] * 100, label='weekday')
         ax8.plot(df_data_decom['data_week_odd'], 'b', label='data_week_odd')
         ax8.plot(df_data_decom['data_week_even'], 'r', label='data_week_even')
-        ax8.plot(df_data_decom['max'], label='max')
-        ax8.plot(df_data_decom['min'], label='min')
-        ax8.plot(df_data_decom['mean'], label='mean')
-        ax8.plot(df_data_decom['std'], label='std')
-        # ax8.set_xticklabels(df_4H_mean['date'], rotation=30)
+        # ax8.plot(df_data_decom['max'], label='max')
+        # ax8.plot(df_data_decom['min'], label='min')
+        # ax8.plot(df_data_decom['mean'], label='mean')
+        # ax8.plot(df_data_decom['std'], label='std')
+        ax8.set_xticks(df_data_decom.index[::168])
+        ax8.set_xticklabels(df_data_decom.index[::168], rotation=30)
         ax8.legend()
 
 
@@ -243,15 +255,24 @@ def plot_pqms_decomposition(period):
         ax3.plot(df_4H_mean['diff_load'])
         ax3.set_ylabel('4H Difference Load Data')
         # ax3.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax3.set_xticks(df_data_decom.index[::168])
+        ax3.set_xticklabels(df_data_decom.index[::168], rotation=30)
+        ax3.legend()
 
         ax6.plot(df_4H_mean['diff_reg_load'])
         ax6.set_ylabel('4H Difference Regular Load Data')
         ax6.set_ylim(0, 1)
         # ax6.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax6.set_xticks(df_data_decom.index[::168])
+        ax6.set_xticklabels(df_data_decom.index[::168], rotation=30)
+        ax6.legend()
 
         ax9.plot(df_4H_mean['mean_change_detection'])
         ax9.set_ylabel('4H Mean Change Detection')
         # ax9.set_xticklabels(df_4H_mean['date'], rotation=30)
+        ax9.set_xticks(df_data_decom.index[::168])
+        ax9.set_xticklabels(df_data_decom.index[::168], rotation=30)
+        ax9.legend()
 
 
 
