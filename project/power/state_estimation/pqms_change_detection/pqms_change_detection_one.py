@@ -113,7 +113,7 @@ def plot_pqms_decomposition(period):
             df_H_max_des_week['date_group_week'] = df_H_max_des_week.index
             # df_H_max_des_week.rename(columns={'count': 'week_count', 'mean': 'week_mean', 'std': 'week_std', 'min': 'week_min', '25%': 'week_25%', '50%': 'week_50%', '75%': 'week_75%', 'max': 'week_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
             df_H_max_des_week.rename(columns={'max': 'week_max'}, inplace=True)
-            df_H_data_des_week = pd.DataFrame(df_H_max_des_week)
+            df_H_data_des_week = pd.DataFrame({'week_max':df_H_max_des_week['week_max'], 'date_group_week':df_H_max_des_week['date_group_week']}, df_H_max_des_week.index)
 
 
             print('경과시간 2:', (time.time() - start))
@@ -124,7 +124,6 @@ def plot_pqms_decomposition(period):
             df_H_mean_des_week['date_group_week'] = df_H_mean_des_week.index
             df_H_mean_des_week.rename(columns={'mean': 'week_mean'}, inplace=True)
             df_H_data_des_week['week_mean'] = df_H_mean_des_week['week_mean']
-
 
 
             print('경과시간 3:', (time.time() - start))
@@ -139,8 +138,8 @@ def plot_pqms_decomposition(period):
 
 
             df_H_data = pd.merge(df_H_data, df_H_data_des_week, on='date_group_week', how='left')
-            df_H_data = pd.merge(df_H_data, df_H_data_des_week, on='date_group_week', how='left')
-            df_H_data = pd.merge(df_H_data, df_H_data_des_week, on='date_group_week', how='left')
+            df_H_data_des_week['week_ratio'] = df_H_data_des_week['week_range'] / df_H_data_des_week['week_range'].shift(1)
+            df_H_data_des_week['week_change_flag'] = (df_H_data_des_week['week_ratio'] < 0.6) | (df_H_data_des_week['week_ratio'] > 1.4)
 
 
             print('경과시간 4:', (time.time() - start))
@@ -151,14 +150,13 @@ def plot_pqms_decomposition(period):
             df_H_data['diff_week_min'] = df_H_data['week_min'].diff()
 
 
-
             # 일별 통계량 max
             df_H_data['yyyymmdd'] = df_H_data['datetime'].dt.strftime('%Y%m%d')
             df_H_max_des_day = pd.DataFrame(df_H_data.groupby('yyyymmdd')['load_max'].describe())
             df_H_max_des_day['yyyymmdd'] = df_H_max_des_day.index
             # df_H_max_des_day.rename(columns={'count': 'day_count', 'mean': 'day_mean', 'std': 'day_std', 'min': 'day_min', '25%': 'day_25%', '50%': 'day_50%', '75%': 'day_75%', 'max': 'day_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
             df_H_max_des_day.rename(columns={'max': 'day_max'}, inplace=True)
-            df_H_data = pd.merge(df_H_data, df_H_max_des_day, on='yyyymmdd', how='left')
+            df_H_data = pd.merge(df_H_data, pd.DataFrame({'yyyymmdd':df_H_max_des_day['yyyymmdd'],'day_max':df_H_max_des_day['day_max']}), on='yyyymmdd', how='left')
 
 
             # 일별 통계량 mean
@@ -166,7 +164,7 @@ def plot_pqms_decomposition(period):
             df_H_mean_des_day = pd.DataFrame(df_H_data.groupby('yyyymmdd')['load_mean'].describe())
             df_H_mean_des_day['yyyymmdd'] = df_H_mean_des_day.index
             df_H_mean_des_day.rename(columns={'mean': 'day_mean'}, inplace=True)
-            df_H_data = pd.merge(df_H_data, df_H_mean_des_day, on='yyyymmdd', how='left')
+            df_H_data = pd.merge(df_H_data, pd.DataFrame({'yyyymmdd':df_H_mean_des_day['yyyymmdd'],'day_mean':df_H_mean_des_day['day_mean']}), on='yyyymmdd', how='left')
 
 
             # 일별 통계량 min
@@ -174,7 +172,7 @@ def plot_pqms_decomposition(period):
             df_H_min_des_day = pd.DataFrame(df_H_data.groupby('yyyymmdd')['load_min'].describe())
             df_H_min_des_day['yyyymmdd'] = df_H_min_des_day.index
             df_H_min_des_day.rename(columns={'min': 'day_min'}, inplace=True)
-            df_H_data = pd.merge(df_H_data, df_H_min_des_day, on='yyyymmdd', how='left')
+            df_H_data = pd.merge(df_H_data, pd.DataFrame({'yyyymmdd':df_H_min_des_day['yyyymmdd'],'day_min':df_H_min_des_day['day_min']}), on='yyyymmdd', how='left')
 
 
             df_H_data['day_range'] = df_H_data['day_max'] - df_H_data['day_min']
@@ -190,15 +188,11 @@ def plot_pqms_decomposition(period):
             df_H_data.reindex([idx for idx in range(len(df_H_data))])
 
 
-            # 일별 부하 데이터의 범위가 임계치를 초과하여 변동한 시점 탐지
-            df_range_day = df_H_data.resample('D')['load_max'].max() - df_H_data.resample('D')['load_min'].min()
-
-
             print('경과시간 5:', (time.time() - start))
 
 
-            fig = plt.figure(figsize=(21,14))
-            gs = gridspec.GridSpec(4, 3)
+            fig = plt.figure(figsize=(35,14))
+            gs = gridspec.GridSpec(4, 5)
             ax0_0 = plt.subplot(gs[0, 0])
             ax1_0 = plt.subplot(gs[1, 0])
             ax2_0 = plt.subplot(gs[2, 0], sharex=ax0_0)
@@ -208,13 +202,13 @@ def plot_pqms_decomposition(period):
             ax0_1 = plt.subplot(gs[0, 1], sharex=ax0_0)
             ax1_1 = plt.subplot(gs[1, 1], sharex=ax0_0)
             ax2_1 = plt.subplot(gs[2, 1], sharex=ax0_0)
-            ax3_1 = plt.subplot(gs[3, 1], sharex=ax0_0)
+            ax3_1 = plt.subplot(gs[3, 1])
 
 
             ax0_2 = plt.subplot(gs[0, 2], sharex=ax0_0)
             ax1_2 = plt.subplot(gs[1, 2], sharex=ax0_0)
             ax2_2 = plt.subplot(gs[2, 2], sharex=ax0_0)
-            ax3_2 = plt.subplot(gs[3, 2], sharex=ax0_0)
+            ax3_2 = plt.subplot(gs[3, 2])
 
 
             # ax2_1.plot(df_data_decom['weekday'] * 100, label='weekday')
@@ -239,11 +233,13 @@ def plot_pqms_decomposition(period):
             ax0_1.scatter(df_H_data.index, df_H_data['diff_day_max'], s=10, label='diff_day_max')
             ax1_1.scatter(df_H_data.index, df_H_data['diff_day_mean'], s=10, label='diff_day_mean')
             ax2_1.scatter(df_H_data.index, df_H_data['diff_day_min'], s=10, label='diff_day_min')
+            ax3_1.scatter(df_H_data_des_week.index, df_H_data_des_week['week_ratio'], label='week_ratio')
 
 
             ax0_2.scatter(df_H_data.index, df_H_data['diff_week_max'], s=10, label='diff_week_max')
             ax1_2.scatter(df_H_data.index, df_H_data['diff_week_mean'], s=10, label='diff_week_mean')
             ax2_2.scatter(df_H_data.index, df_H_data['diff_week_min'], s=10, label='diff_week_min')
+            ax3_2.scatter(df_H_data_des_week.index, df_H_data_des_week['week_change_flag'], label='week_change_flag')
 
 
             for ax in fig.axes:
@@ -254,6 +250,13 @@ def plot_pqms_decomposition(period):
             plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'))
             plt.show()
             plt.close()
+
+
+
+
+
+
+
 
 
         print('경과시간 6:', (time.time() - start))
