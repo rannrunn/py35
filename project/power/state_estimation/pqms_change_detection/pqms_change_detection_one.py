@@ -54,216 +54,347 @@ def regularization(df, col, col_reg):
     return df
 
 
-def plot_pqms_decomposition(period):
-    dir_source = 'C:\\_data\\부하데이터'
-    dir_output = 'C:\\_data\\pqms_load_decompose_plot_one\\' + str(period) + '\\'
-    colors = ['b', 'o', 'r']
+def plot_pqms_decomposition(filepath):
+
+    dir_output = 'C:\\_data\\pqms_change_detection_one\\'
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
 
-    filepaths = ['C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
-                , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID5\금촌_3상.xls']
+    start = time.time()
 
+    filename = os.path.basename(filepath)
+    dirname = os.path.dirname(filepath)
 
-    for filepath in filepaths:
-        start = time.time()
 
-        dirname = os.path.dirname(filepath)
-        filename = os.path.basename(filepath)
+    if not filename.find('3상') > -1: #
+        return
 
 
-        df_temp = pd.read_excel(filepath)
-        df_temp = df_temp.rename(columns={'Unnamed: 1': 'load'})
+    df_temp = pd.read_excel(filepath)
+    df_temp = df_temp.rename(columns={'Unnamed: 1': 'load'})
+    print('경과시간 1:', (time.time() - start))
+    bool_possible = is_possible(df_temp, 'load')
+    if bool_possible:
 
+        df_temp.set_index(pd.to_datetime(df_temp[df_temp.columns[0]]), inplace=True)
+        df_4H_max = df_temp.resample('4H').max()
+        df_4H_mean = df_temp.resample('4H').mean()
+        df_4H_min = df_temp.resample('4H').min()
+        df_4H_data = pd.DataFrame()
 
-        print('경과시간 1:', (time.time() - start))
 
+        df_4H_data['load_max'] = df_4H_max['load']
+        df_4H_data['load_mean'] = df_4H_mean['load']
+        df_4H_data['load_min'] = df_4H_min['load']
 
-        bool_possible = is_possible(df_temp, 'load')
-        if bool_possible and filename.find('3상') > -1: #
-            df_temp.set_index(pd.to_datetime(df_temp[df_temp.columns[0]]), inplace=True)
-            df_H_max = df_temp.resample('4H').max()
-            df_H_mean = df_temp.resample('4H').mean()
-            df_H_min = df_temp.resample('4H').min()
-            df_H_data = pd.DataFrame()
 
+        # 주별 통계량 max
+        df_4H_data['datetime'] = df_4H_data.index.values
+        df_4H_data['weekday'] = df_4H_data['datetime'].dt.weekday
+        df_4H_data['day_of_year'] = df_4H_data['datetime'].dt.dayofyear
+        df_4H_data['day_of_years'] = df_4H_data['datetime'].apply(lambda x: df_4H_data.loc[x, 'day_of_year'] + sum([datetime.date(item, 12, 31).timetuple().tm_yday for item in list(set(df_4H_data['datetime'].dt.year.values)) if item < df_4H_data.loc[x, 'datetime'].year]))
 
-            df_H_data['load_max'] = df_H_max['load']
-            df_H_data['load_mean'] = df_H_mean['load']
-            df_H_data['load_min'] = df_H_min['load']
 
+        df_4H_data['date_group_week'] = df_4H_data['datetime'].apply(lambda x: df_4H_data.loc[x, 'day_of_years'] - (df_4H_data.loc[x, 'weekday'] + 1))
+        df_4H_data = df_4H_data[(df_4H_data['date_group_week'] != df_4H_data['date_group_week'].min()) & (df_4H_data['date_group_week'] != df_4H_data['date_group_week'].max())]
 
-            # 주별 통계량 max
-            df_H_data['datetime'] = df_H_data.index.values
-            df_H_data['weekday'] = df_H_data['datetime'].dt.weekday
-            df_H_data['day_of_year'] = df_H_data['datetime'].dt.dayofyear
-            df_H_data['day_of_years'] = df_H_data['datetime'].apply(lambda x: df_H_data.loc[x, 'day_of_year'] + sum([datetime.date(item, 12, 31).timetuple().tm_yday for item in list(set(df_H_data['datetime'].dt.year.values)) if item < df_H_data.loc[x, 'datetime'].year]))
 
+        df_4H_data['data_week_odd'] = df_4H_data.loc[df_4H_data['date_group_week'] % 2 == 0, 'load_mean']
+        df_4H_data['data_week_even'] = df_4H_data.loc[df_4H_data['date_group_week'] % 2 == 1, 'load_mean']
 
-            df_H_data['date_group_week'] = df_H_data['datetime'].apply(lambda x: df_H_data.loc[x, 'day_of_years'] - (df_H_data.loc[x, 'weekday'] + 1))
-            df_H_data = df_H_data[(df_H_data['date_group_week'] != df_H_data['date_group_week'].min()) & (df_H_data['date_group_week'] != df_H_data['date_group_week'].max())]
 
+        df_W_des_max = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_max'].describe())
+        df_W_des_max['date_group_week'] = df_W_des_max.index
+        # df_H_max_des_week.rename(columns={'count': 'week_count', 'mean': 'week_mean', 'std': 'week_std', 'min': 'week_min', '25%': 'week_25%', '50%': 'week_50%', '75%': 'week_75%', 'max': 'week_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
+        df_W_des_max.rename(columns={'max': 'week_max'}, inplace=True)
+        df_W_des = pd.DataFrame({'week_max':df_W_des_max['week_max'], 'date_group_week':df_W_des_max['date_group_week']}, df_W_des_max.index)
 
-            df_H_data['data_week_odd'] = df_H_data.loc[df_H_data['date_group_week'] % 2 == 0, 'load_mean']
-            df_H_data['data_week_even'] = df_H_data.loc[df_H_data['date_group_week'] % 2 == 1, 'load_mean']
 
+        print('경과시간 2:', (time.time() - start))
 
-            df_H_max_des_week = pd.DataFrame(df_H_data.groupby('date_group_week')['load_max'].describe())
-            df_H_max_des_week['date_group_week'] = df_H_max_des_week.index
-            # df_H_max_des_week.rename(columns={'count': 'week_count', 'mean': 'week_mean', 'std': 'week_std', 'min': 'week_min', '25%': 'week_25%', '50%': 'week_50%', '75%': 'week_75%', 'max': 'week_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
-            df_H_max_des_week.rename(columns={'max': 'week_max'}, inplace=True)
-            df_H_data_des_week = pd.DataFrame({'week_max':df_H_max_des_week['week_max'], 'date_group_week':df_H_max_des_week['date_group_week']}, df_H_max_des_week.index)
 
+        # 주별 통계량 mean
+        df_W_des_mean = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_mean'].describe())
+        df_W_des_mean['date_group_week'] = df_W_des_mean.index
+        df_W_des_mean.rename(columns={'mean': 'week_mean', 'std': 'week_std'}, inplace=True)
+        df_W_des['week_mean'] = df_W_des_mean['week_mean']
+        df_W_des['week_std'] = df_W_des_mean['week_std']
 
-            print('경과시간 2:', (time.time() - start))
 
+        print('경과시간 3:', (time.time() - start))
 
-            # 주별 통계량 mean
-            df_H_mean_des_week = pd.DataFrame(df_H_data.groupby('date_group_week')['load_mean'].describe())
-            df_H_mean_des_week['date_group_week'] = df_H_mean_des_week.index
-            df_H_mean_des_week.rename(columns={'mean': 'week_mean'}, inplace=True)
-            df_H_data_des_week['week_mean'] = df_H_mean_des_week['week_mean']
 
+        # 주별 통계량 min
+        df_W_des_min = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_min'].describe())
+        df_W_des_min['date_group_week'] = df_W_des_min.index
+        df_W_des_min.rename(columns={'min': 'week_min'}, inplace=True)
+        df_W_des['week_min'] = df_W_des_min['week_min']
 
-            print('경과시간 3:', (time.time() - start))
+        # 주단위 범위 계산
+        df_W_des['week_range'] = df_W_des['week_max'] - df_W_des['week_min']
 
+        # 주단위 범위 변화 탐지 : 탐지율 높음
+        df_W_des['week_ratio_range'] = df_W_des['week_range'] / df_W_des['week_range'].shift(1)
+        df_W_des['week_flag_change_range'] = (df_W_des['week_ratio_range'] < 0.714) | (df_W_des['week_ratio_range'] > 1.4)
 
-            # 주별 통계량 min
-            df_H_min_des_week = pd.DataFrame(df_H_data.groupby('date_group_week')['load_min'].describe())
-            df_H_min_des_week['date_group_week'] = df_H_min_des_week.index
-            df_H_min_des_week.rename(columns={'min': 'week_min'}, inplace=True)
-            df_H_data_des_week['week_min'] = df_H_min_des_week['week_min']
-            df_H_data_des_week['week_range'] = df_H_data_des_week['week_max'] - df_H_data_des_week['week_min']
+        # 주단위 평균 변화 탐지 : 탐지율 높음
+        df_W_des['week_ratio_mean'] = df_W_des['week_mean'] / df_W_des['week_mean'].shift(1)
+        df_W_des['week_flag_change_mean'] = (df_W_des['week_ratio_mean'] < 0.769) | (df_W_des['week_ratio_mean'] > 1.3)
 
+        # 주단위 표준편차 변화 탐지 : 부하 형태가 달라도 표준편차가 동일한 경우가 있음 -> AND, OR 조건을 잘 따져서 사용해야 함
+        df_W_des['week_ratio_std'] = df_W_des['week_std'] / df_W_des['week_std'].shift(1)
+        df_W_des['week_flag_change_std'] = (df_W_des['week_ratio_std'] < 0.714) | (df_W_des['week_ratio_std'] > 1.4)
 
-            df_H_data = pd.merge(df_H_data, df_H_data_des_week, on='date_group_week', how='left')
-            df_H_data_des_week['week_ratio'] = df_H_data_des_week['week_range'] / df_H_data_des_week['week_range'].shift(1)
-            df_H_data_des_week['week_change_flag'] = (df_H_data_des_week['week_ratio'] < 0.6) | (df_H_data_des_week['week_ratio'] > 1.4)
 
+        # 주단위 총계 변화 탐지 : 평균에 단순히 7을 곱한 값이기 때문에 평균을 가지고 탐지하는 것과 차이가 없음
 
-            print('경과시간 4:', (time.time() - start))
 
+        # 주단위 계산 결과 데이터 병합
+        df_4H_data = pd.merge(df_4H_data, df_W_des, on='date_group_week', how='left')
 
-            df_H_data['diff_week_max'] = df_H_data['week_max'].diff()
-            df_H_data['diff_week_mean'] = df_H_data['week_mean'].diff()
-            df_H_data['diff_week_min'] = df_H_data['week_min'].diff()
 
+        print('경과시간 4:', (time.time() - start))
 
-            # 일별 통계량 max
-            df_H_data['yyyymmdd'] = df_H_data['datetime'].dt.strftime('%Y%m%d')
-            df_H_max_des_day = pd.DataFrame(df_H_data.groupby('yyyymmdd')['load_max'].describe())
-            df_H_max_des_day['yyyymmdd'] = df_H_max_des_day.index
-            # df_H_max_des_day.rename(columns={'count': 'day_count', 'mean': 'day_mean', 'std': 'day_std', 'min': 'day_min', '25%': 'day_25%', '50%': 'day_50%', '75%': 'day_75%', 'max': 'day_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
-            df_H_max_des_day.rename(columns={'max': 'day_max'}, inplace=True)
-            df_H_data = pd.merge(df_H_data, pd.DataFrame({'yyyymmdd':df_H_max_des_day['yyyymmdd'],'day_max':df_H_max_des_day['day_max']}), on='yyyymmdd', how='left')
 
+        df_4H_data['diff_week_max'] = df_4H_data['week_max'].diff()
+        df_4H_data['diff_week_mean'] = df_4H_data['week_mean'].diff()
+        df_4H_data['diff_week_min'] = df_4H_data['week_min'].diff()
 
-            # 일별 통계량 mean
-            df_H_data['yyyymmdd'] = df_H_data['datetime'].dt.strftime('%Y%m%d')
-            df_H_mean_des_day = pd.DataFrame(df_H_data.groupby('yyyymmdd')['load_mean'].describe())
-            df_H_mean_des_day['yyyymmdd'] = df_H_mean_des_day.index
-            df_H_mean_des_day.rename(columns={'mean': 'day_mean'}, inplace=True)
-            df_H_data = pd.merge(df_H_data, pd.DataFrame({'yyyymmdd':df_H_mean_des_day['yyyymmdd'],'day_mean':df_H_mean_des_day['day_mean']}), on='yyyymmdd', how='left')
 
+        # 일별 통계량 max
+        df_4H_data['yyyymmdd'] = df_4H_data['datetime'].dt.strftime('%Y%m%d')
+        df_D_des_max = pd.DataFrame(df_4H_data.groupby('yyyymmdd')['load_max'].describe())
+        df_D_des_max['yyyymmdd'] = df_D_des_max.index
+        # df_H_max_des_day.rename(columns={'count': 'day_count', 'mean': 'day_mean', 'std': 'day_std', 'min': 'day_min', '25%': 'day_25%', '50%': 'day_50%', '75%': 'day_75%', 'max': 'day_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
+        df_D_des_max.rename(columns={'max': 'day_max'}, inplace=True)
+        df_D_des = pd.DataFrame({'yyyymmdd':df_D_des_max['yyyymmdd'], 'day_max':df_D_des_max['day_max']}, df_D_des_max.index)
+        df_D_des['weekday'] = pd.to_datetime(df_D_des['yyyymmdd']).dt.weekday
 
-            # 일별 통계량 min
-            df_H_data['yyyymmdd'] = df_H_data['datetime'].dt.strftime('%Y%m%d')
-            df_H_min_des_day = pd.DataFrame(df_H_data.groupby('yyyymmdd')['load_min'].describe())
-            df_H_min_des_day['yyyymmdd'] = df_H_min_des_day.index
-            df_H_min_des_day.rename(columns={'min': 'day_min'}, inplace=True)
-            df_H_data = pd.merge(df_H_data, pd.DataFrame({'yyyymmdd':df_H_min_des_day['yyyymmdd'],'day_min':df_H_min_des_day['day_min']}), on='yyyymmdd', how='left')
 
+        # 일별 통계량 mean
+        df_D_des_mean = pd.DataFrame(df_4H_data.groupby('yyyymmdd')['load_mean'].describe())
+        df_D_des_mean['yyyymmdd'] = df_D_des_mean.index
+        df_D_des_mean.rename(columns={'mean': 'day_mean', 'std': 'day_std'}, inplace=True)
+        df_D_des['day_mean'] = df_D_des_mean['day_mean']
+        df_D_des['day_std'] = df_D_des_mean['day_std']
 
-            df_H_data['day_range'] = df_H_data['day_max'] - df_H_data['day_min']
 
+        # 일별 통계량 min
+        df_D_des_min = pd.DataFrame(df_4H_data.groupby('yyyymmdd')['load_min'].describe())
+        df_D_des_min['yyyymmdd'] = df_D_des_min.index
+        df_D_des_min.rename(columns={'min': 'day_min'}, inplace=True)
+        df_D_des['day_min'] = df_D_des_min['day_min']
+        df_4H_data = pd.merge(df_4H_data, df_D_des, on='yyyymmdd', how='left')
 
-            df_H_data['diff_day_max'] = df_H_data['day_max'].diff()
-            df_H_data['diff_day_mean'] = df_H_data['day_mean'].diff()
-            df_H_data['diff_day_min'] = df_H_data['day_min'].diff()
-            df_H_data.set_index(df_H_data['datetime'], inplace=True)
 
+        # 일단위 범위 계산
+        df_D_des['day_range'] = df_D_des['day_max'] - df_D_des['day_min']
 
-            df_H_data['date'] = df_H_data.index.to_series().dt.strftime('%Y-%m-%d').astype(str)
-            df_H_data.reindex([idx for idx in range(len(df_H_data))])
+        # 일단위 범위 변화 탐지
+        df_D_des['day_ratio_range'] = df_D_des['day_range'] / df_D_des['day_range'].shift(7)
+        df_D_des['day_flag_change_range'] = (df_D_des['day_ratio_range'] < 0.666) | (df_D_des['day_ratio_range'] > 1.5)
 
+        # 일단위 평균 변화 탐지
+        df_D_des['day_ratio_mean'] = df_D_des['day_mean'] / df_D_des['day_mean'].shift(7)
+        df_D_des['day_flag_change_mean'] = (df_D_des['day_ratio_mean'] < 0.714) | (df_D_des['day_ratio_mean'] > 1.4)
 
-            print('경과시간 5:', (time.time() - start))
+        # 일단위 표준편차 변화 탐지
+        df_D_des['day_ratio_std'] = df_D_des['day_std'] / df_D_des['day_std'].shift(7)
+        df_D_des['day_flag_change_std'] = (df_D_des['day_ratio_std'] < 0.666) | (df_D_des['day_ratio_std'] > 1.5)
 
 
-            fig = plt.figure(figsize=(35,14))
-            gs = gridspec.GridSpec(4, 5)
-            ax0_0 = plt.subplot(gs[0, 0])
-            ax1_0 = plt.subplot(gs[1, 0])
-            ax2_0 = plt.subplot(gs[2, 0], sharex=ax0_0)
-            ax3_0 = plt.subplot(gs[3, 0], sharex=ax0_0)
 
+        df_D_des['diff_day_max'] = df_D_des['day_max'].diff()
+        df_D_des['diff_day_mean'] = df_D_des['day_mean'].diff()
+        df_D_des['diff_day_min'] = df_D_des['day_min'].diff()
+        df_D_des.set_index(pd.to_datetime(df_D_des['yyyymmdd']), inplace=True)
 
-            ax0_1 = plt.subplot(gs[0, 1], sharex=ax0_0)
-            ax1_1 = plt.subplot(gs[1, 1], sharex=ax0_0)
-            ax2_1 = plt.subplot(gs[2, 1], sharex=ax0_0)
-            ax3_1 = plt.subplot(gs[3, 1])
+        df_4H_data.set_index(df_4H_data['datetime'], inplace=True)
 
+        print('경과시간 5:', (time.time() - start))
 
-            ax0_2 = plt.subplot(gs[0, 2], sharex=ax0_0)
-            ax1_2 = plt.subplot(gs[1, 2], sharex=ax0_0)
-            ax2_2 = plt.subplot(gs[2, 2], sharex=ax0_0)
-            ax3_2 = plt.subplot(gs[3, 2])
 
+        colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
+        fig = plt.figure(figsize=(36,14))
+        gs = gridspec.GridSpec(4, 6)
+        ax0_0 = plt.subplot(gs[0, 0])
+        ax1_0 = plt.subplot(gs[1, 0])
+        ax2_0 = plt.subplot(gs[2, 0], sharex=ax1_0)
+        ax3_0 = plt.subplot(gs[3, 0], sharex=ax1_0)
 
-            # ax2_1.plot(df_data_decom['weekday'] * 100, label='weekday')
-            ax0_0.plot(df_H_data['data_week_odd'], 'b')
-            ax0_0.plot(df_H_data['data_week_even'], 'r')
-            ax0_0.plot(df_H_data['week_max'])
-            ax0_0.plot(df_H_data['week_mean'])
-            ax0_0.plot(df_H_data['week_min'])
 
+        ax0_1 = plt.subplot(gs[0, 1])
+        ax1_1 = plt.subplot(gs[1, 1], sharex=ax1_0)
+        ax2_1 = plt.subplot(gs[2, 1], sharex=ax1_0)
+        ax3_1 = plt.subplot(gs[3, 1], sharex=ax1_0)
 
-            ax1_0.scatter(df_H_data_des_week.index, df_H_data_des_week['week_range'])
 
+        ax0_2 = plt.subplot(gs[0, 2])
+        ax1_2 = plt.subplot(gs[1, 2], sharex=ax1_0)
+        ax2_2 = plt.subplot(gs[2, 2], sharex=ax1_0)
+        ax3_2 = plt.subplot(gs[3, 2], sharex=ax1_0)
 
-            ax2_0.plot(df_H_data['day_max'], label='day_max')
-            ax2_0.plot(df_H_data['day_mean'], label='day_mean')
-            ax2_0.plot(df_H_data['day_min'], label='day_min')
 
+        ax0_3 = plt.subplot(gs[0, 3], sharex=ax0_0)
+        ax1_3 = plt.subplot(gs[1, 3], sharex=ax0_0)
+        ax2_3 = plt.subplot(gs[2, 3], sharex=ax0_0)
+        ax3_3 = plt.subplot(gs[3, 3], sharex=ax0_0)
 
-            ax3_0.scatter(df_H_data.index, df_H_data['day_range'])
+        ax0_4 = plt.subplot(gs[0, 4], sharex=ax0_0)
+        ax1_4 = plt.subplot(gs[1, 4], sharex=ax0_0)
+        ax2_4 = plt.subplot(gs[2, 4], sharex=ax0_0)
+        ax3_4 = plt.subplot(gs[3, 4], sharex=ax0_0)
 
 
-            ax0_1.scatter(df_H_data.index, df_H_data['diff_day_max'], s=10, label='diff_day_max')
-            ax1_1.scatter(df_H_data.index, df_H_data['diff_day_mean'], s=10, label='diff_day_mean')
-            ax2_1.scatter(df_H_data.index, df_H_data['diff_day_min'], s=10, label='diff_day_min')
-            ax3_1.scatter(df_H_data_des_week.index, df_H_data_des_week['week_ratio'], label='week_ratio')
+        ax0_5 = plt.subplot(gs[0, 5], sharex=ax0_0)
+        ax1_5 = plt.subplot(gs[1, 5], sharex=ax0_0)
+        ax2_5 = plt.subplot(gs[2, 5], sharex=ax0_0)
+        ax3_5 = plt.subplot(gs[3, 5], sharex=ax0_0)
 
 
-            ax0_2.scatter(df_H_data.index, df_H_data['diff_week_max'], s=10, label='diff_week_max')
-            ax1_2.scatter(df_H_data.index, df_H_data['diff_week_mean'], s=10, label='diff_week_mean')
-            ax2_2.scatter(df_H_data.index, df_H_data['diff_week_min'], s=10, label='diff_week_min')
-            ax3_2.scatter(df_H_data_des_week.index, df_H_data_des_week['week_change_flag'], label='week_change_flag')
+        # ax2_1.plot(df_data_decom['weekday'] * 100, label='weekday')
+        ax0_0.plot(df_4H_data['data_week_odd'], 'b')
+        ax0_0.plot(df_4H_data['data_week_even'], 'r')
+        ax0_0.plot(df_4H_data['week_max'])
+        ax0_0.plot(df_4H_data['week_mean'])
+        ax0_0.plot(df_4H_data['week_min'])
+        ax0_0.set_ylim(ymin=0)
 
 
-            for ax in fig.axes:
-                plt.sca(ax)
-                plt.xticks(rotation=30)
-                plt.legend()
+        ax1_0.scatter(df_W_des.index, df_W_des['week_range'])
+        ax1_0.set_ylim(ymin=0)
+        ax1_0.legend()
+        ax2_0.scatter(df_W_des.index, df_W_des['week_ratio_range'])
+        ax2_0.set_ylim(ymin=0)
+        ax2_0.legend()
+        ax3_0.scatter(df_W_des.index, df_W_des['week_flag_change_range'])
+        ax3_0.set_ylim([-2, 2])
+        ax3_0.legend()
 
-            plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'))
-            plt.show()
-            plt.close()
 
+        ax1_1.scatter(df_W_des.index, df_W_des['week_mean'])
+        ax1_1.set_ylim(ymin=0)
+        ax1_1.legend()
+        ax2_1.scatter(df_W_des.index, df_W_des['week_ratio_mean'])
+        ax2_1.set_ylim(ymin=0)
+        ax2_1.legend()
+        ax3_1.scatter(df_W_des.index, df_W_des['week_flag_change_mean'])
+        ax3_1.set_ylim([-2, 2])
+        ax3_1.legend()
 
 
+        ax1_2.scatter(df_W_des.index, df_W_des['week_std'])
+        ax1_2.set_ylim(ymin=0)
+        ax1_2.legend()
+        ax2_2.scatter(df_W_des.index, df_W_des['week_ratio_std'])
+        ax2_2.set_ylim(ymin=0)
+        ax2_2.legend()
+        ax3_2.scatter(df_W_des.index, df_W_des['week_flag_change_std'])
+        ax3_2.set_ylim([-2, 2])
+        ax3_2.legend()
 
 
+        ax0_3.plot(df_D_des['day_max'], label='day_max')
+        ax0_3.plot(df_D_des['day_mean'], label='day_mean')
+        ax0_3.plot(df_D_des['day_min'], label='day_min')
 
 
 
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_range']
+            ax1_3.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax1_3.set_ylim(ymin=0)
 
-        print('경과시간 6:', (time.time() - start))
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_ratio_range']
+            ax2_3.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax2_3.set_ylim(ymin=0)
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_flag_change_range']
+            ax3_3.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax3_3.set_ylim([-2, 2])
+
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_mean']
+            ax1_4.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax1_4.set_ylim(ymin=0)
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_ratio_mean']
+            ax2_4.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax2_4.set_ylim(ymin=0)
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_flag_change_mean']
+            ax3_4.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax3_4.set_ylim([-2, 2])
+
+
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_mean']
+            ax1_5.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax1_5.set_ylim(ymin=0)
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_ratio_mean']
+            ax2_5.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax2_5.set_ylim(ymin=0)
+
+        for idx in range(len(colors)):
+            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
+            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_flag_change_mean']
+            ax3_5.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
+        ax3_5.set_ylim([-2, 2])
+
+
+        # 일별
+        # ax2_0.plot(df_H_data['day_max'], label='day_max')
+        # ax2_0.plot(df_H_data['day_mean'], label='day_mean')
+        # ax2_0.plot(df_H_data['day_min'], label='day_min')
+        #
+        #
+        #
+
+
+        # ax0_3.scatter(df_H_data.index, df_H_data['diff_day_max'], s=10, label='diff_day_max')
+        # ax1_3.scatter(df_H_data.index, df_H_data['diff_day_mean'], s=10, label='diff_day_mean')
+        # ax2_3.scatter(df_H_data.index, df_H_data['diff_day_min'], s=10, label='diff_day_min')
+        #
+
+
+        for ax in fig.axes:
+            plt.sca(ax)
+            plt.xticks(rotation=30)
+
+        # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
+        plt.tight_layout()
+        # plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
+        plt.show()
+        plt.close()
+
+
+    print('경과시간 6:', (time.time() - start))
 
 
 if __name__ == '__main__':
-    period = 42
-    plot_pqms_decomposition(period)
 
+    dir_source = 'C:\\_data\\부하데이터'
+
+    filepaths = ['C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
+        , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID5\금촌_3상.xls']
+
+    for filepath in filepaths:
+        plot_pqms_decomposition(filepath)
 
