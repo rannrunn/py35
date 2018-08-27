@@ -64,7 +64,7 @@ def regularization(df, col, col_reg):
 
 def plot_pqms_decomposition(filepath):
 
-    dir_output = 'C:\\_data\\pqms_change_detection_all_many_5\\'
+    dir_output = 'C:\\_data\\pqms_change_detection_all_many_scatter\\'
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
