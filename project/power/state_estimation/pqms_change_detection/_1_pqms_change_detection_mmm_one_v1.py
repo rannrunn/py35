@@ -59,12 +59,39 @@ def regularization(df, col, col_reg):
     return df
 
 
+def detection_change_week(df):
+
+    df['week_flag_change_range'] = False
+
+    load_range_mean = None  # 범위의 평균
+    week_num_start = -1
+    for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 1):
+
+        if len(df.loc[(df['date_group_week'] == week_num), 'week_range']) == 0:
+            continue
+
+        load_range_mean = df.loc[(df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num - 1), 'week_range'].mean()
+
+        laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / load_range_mean
+
+        if laod_range_ratio < 0.714 or laod_range_ratio > 1.4:
+            df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range'] = True
+            week_num_start = week_num
+
+    return df
+
+
+def detection_change_day(df):
 
 
 
-def plot_pqms_decomposition(filepath):
+    return df
 
-    dir_output = 'C:\\_data\\pqms_change_detection_all_many_plot\\'
+
+
+def pqms_change_detection(filepath):
+
+    dir_output = 'C:\\_data\\pqms_change_detection_algorithm\\'
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -82,14 +109,17 @@ def plot_pqms_decomposition(filepath):
     df_temp = pd.read_excel(filepath)
     df_temp = df_temp.rename(columns={'Unnamed: 1': 'load'})
 
+
     # 값이 0과 같거나 작을 경우 np.nan으로 대체
     df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
+
 
     print('경과시간 1:', (time.time() - start))
     bool_possible = is_possible(df_temp, 'load')
     if bool_possible:
 
         df_temp.set_index(pd.to_datetime(df_temp[df_temp.columns[0]]), inplace=True)
+
         df_4H_max = df_temp.resample('4H').max()
         df_4H_mean = df_temp.resample('4H').mean()
         df_4H_min = df_temp.resample('4H').min()
@@ -147,23 +177,28 @@ def plot_pqms_decomposition(filepath):
         df_W_des['week_range'] = df_W_des['week_max'] - df_W_des['week_min']
 
         # 주단위 범위 변화 탐지 : 탐지율 높음
-        df_W_des['week_ratio_range'] = df_W_des['week_range'] / df_W_des['week_range'].shift(1)
-        df_W_des['week_flag_change_range'] = (df_W_des['week_ratio_range'] < 0.714) | (df_W_des['week_ratio_range'] > 1.4)
+        # df_W_des['week_ratio_range'] = df_W_des['week_range'] / df_W_des['week_range'].shift(1)
+        # df_W_des['week_flag_change_range'] = (df_W_des['week_ratio_range'] < 0.714) | (df_W_des['week_ratio_range'] > 1.4)
 
         # 주단위 평균 변화 탐지 : 탐지율 높음
-        df_W_des['week_ratio_mean'] = df_W_des['week_mean'] / df_W_des['week_mean'].shift(1)
-        df_W_des['week_flag_change_mean'] = (df_W_des['week_ratio_mean'] < 0.769) | (df_W_des['week_ratio_mean'] > 1.3)
+        # df_W_des['week_ratio_mean'] = df_W_des['week_mean'] / df_W_des['week_mean'].shift(1)
+        # df_W_des['week_flag_change_mean'] = (df_W_des['week_ratio_mean'] < 0.769) | (df_W_des['week_ratio_mean'] > 1.3)
 
         # 주단위 표준편차 변화 탐지 : 부하 형태가 달라도 표준편차가 동일한 경우가 있음 -> AND, OR 조건을 잘 따져서 사용해야 함
-        df_W_des['week_ratio_std'] = df_W_des['week_std'] / df_W_des['week_std'].shift(1)
-        df_W_des['week_flag_change_std'] = (df_W_des['week_ratio_std'] < 0.714) | (df_W_des['week_ratio_std'] > 1.4)
+        # df_W_des['week_ratio_std'] = df_W_des['week_std'] / df_W_des['week_std'].shift(1)
+        # df_W_des['week_flag_change_std'] = (df_W_des['week_ratio_std'] < 0.714) | (df_W_des['week_ratio_std'] > 1.4)
 
 
         # 주단위 총계 변화 탐지 : 평균에 단순히 7을 곱한 값이기 때문에 평균을 가지고 탐지하는 것과 차이가 없음
 
 
+        # 주단위 패턴 변화 탐지
+        df_W_des = detection_change_week(df_W_des)
+
+
         # 주단위 계산 결과 데이터 병합
         df_4H_data = pd.merge(df_4H_data, df_W_des, on='date_group_week', how='left')
+
 
 
         print('경과시간 4:', (time.time() - start))
@@ -229,198 +264,7 @@ def plot_pqms_decomposition(filepath):
 
         colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
         fig = plt.figure(figsize=(36,14))
-        gs = gridspec.GridSpec(4, 6)
-        ax0_0 = plt.subplot(gs[0, 0])
-        ax1_0 = plt.subplot(gs[1, 0], sharex=ax0_0)
-        ax2_0 = plt.subplot(gs[2, 0], sharex=ax1_0)
-        ax3_0 = plt.subplot(gs[3, 0], sharex=ax1_0)
 
-
-        ax0_1 = plt.subplot(gs[0, 1], sharex=ax1_0)
-        ax1_1 = plt.subplot(gs[1, 1], sharex=ax1_0)
-        ax2_1 = plt.subplot(gs[2, 1], sharex=ax1_0)
-        ax3_1 = plt.subplot(gs[3, 1], sharex=ax1_0)
-
-
-        ax0_2 = plt.subplot(gs[0, 2], sharex=ax1_0)
-        ax1_2 = plt.subplot(gs[1, 2], sharex=ax1_0)
-        ax2_2 = plt.subplot(gs[2, 2], sharex=ax1_0)
-        ax3_2 = plt.subplot(gs[3, 2], sharex=ax1_0)
-
-
-        ax0_3 = plt.subplot(gs[0, 3], sharex=ax0_0)
-        ax1_3 = plt.subplot(gs[1, 3], sharex=ax0_0)
-        ax2_3 = plt.subplot(gs[2, 3], sharex=ax0_0)
-        ax3_3 = plt.subplot(gs[3, 3], sharex=ax0_0)
-
-        ax0_4 = plt.subplot(gs[0, 4], sharex=ax0_0)
-        ax1_4 = plt.subplot(gs[1, 4], sharex=ax0_0)
-        ax2_4 = plt.subplot(gs[2, 4], sharex=ax0_0)
-        ax3_4 = plt.subplot(gs[3, 4], sharex=ax0_0)
-
-
-        ax0_5 = plt.subplot(gs[0, 5], sharex=ax0_0)
-        ax1_5 = plt.subplot(gs[1, 5], sharex=ax0_0)
-        ax2_5 = plt.subplot(gs[2, 5], sharex=ax0_0)
-        ax3_5 = plt.subplot(gs[3, 5], sharex=ax0_0)
-
-
-        # ax2_1.plot(df_data_decom['weekday'] * 100, label='weekday')
-        ax0_0.plot(df_4H_data['data_week_odd'], 'b')
-        ax0_0.plot(df_4H_data['data_week_even'], 'r')
-        ax0_0.plot(df_4H_data['week_max'])
-        ax0_0.plot(df_4H_data['week_mean'])
-        ax0_0.plot(df_4H_data['week_min'])
-        ax0_0.set_ylim(ymin=0)
-
-
-        ax1_0.plot(df_4H_data.index, df_4H_data['week_range'])
-        ax1_0.set_ylim(ymin=0)
-        ax1_0.legend()
-        ax2_0.plot(df_4H_data.index, df_4H_data['week_ratio_range'])
-        ax2_0.set_ylim(ymin=0)
-        ax2_0.legend()
-        ax3_0.plot(df_4H_data.index, df_4H_data['week_flag_change_range'])
-        ax3_0.set_ylim([-2, 2])
-        ax3_0.legend()
-
-
-
-        ax0_1.plot(df_4H_data['data_week_odd'], 'b')
-        ax0_1.plot(df_4H_data['data_week_even'], 'r')
-        ax0_1.plot(df_4H_data['week_max'])
-        ax0_1.plot(df_4H_data['week_mean'])
-        ax0_1.plot(df_4H_data['week_min'])
-        ax0_1.set_ylim(ymin=0)
-        ax1_1.plot(df_4H_data.index, df_4H_data['week_mean'])
-        ax1_1.set_ylim(ymin=0)
-        ax1_1.legend()
-        ax2_1.plot(df_4H_data.index, df_4H_data['week_ratio_mean'])
-        ax2_1.set_ylim(ymin=0)
-        ax2_1.legend()
-        ax3_1.plot(df_4H_data.index, df_4H_data['week_flag_change_mean'])
-        ax3_1.set_ylim([-2, 2])
-        ax3_1.legend()
-
-
-        ax0_2.plot(df_4H_data['data_week_odd'], 'b')
-        ax0_2.plot(df_4H_data['data_week_even'], 'r')
-        ax0_2.plot(df_4H_data['week_max'])
-        ax0_2.plot(df_4H_data['week_mean'])
-        ax0_2.plot(df_4H_data['week_min'])
-        ax0_2.set_ylim(ymin=0)
-        ax1_2.plot(df_4H_data.index, df_4H_data['week_std'])
-        ax1_2.set_ylim(ymin=0)
-        ax1_2.legend()
-        ax2_2.plot(df_4H_data.index, df_4H_data['week_ratio_std'])
-        ax2_2.set_ylim(ymin=0)
-        ax2_2.legend()
-        ax3_2.plot(df_4H_data.index, df_4H_data['week_flag_change_std'])
-        ax3_2.set_ylim([-2, 2])
-        ax3_2.legend()
-
-
-        ax0_3.plot(df_4H_data['day_max'], label='day_max')
-        ax0_3.plot(df_4H_data['day_mean'], label='day_mean')
-        ax0_3.plot(df_4H_data['day_min'], label='day_min')
-        ax0_3.set_ylim(ymin=0)
-
-
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_range']
-            ax1_3.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax1_3.set_ylim(ymin=0)
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_ratio_range']
-            ax2_3.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax2_3.set_ylim(ymin=0)
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_flag_change_range']
-            ax3_3.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax3_3.set_ylim([-2, 2])
-
-
-
-
-        ax0_4.plot(df_4H_data['day_max'], label='day_max')
-        ax0_4.plot(df_4H_data['day_mean'], label='day_mean')
-        ax0_4.plot(df_4H_data['day_min'], label='day_min')
-        ax0_4.set_ylim(ymin=0)
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_mean']
-            ax1_4.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax1_4.set_ylim(ymin=0)
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_ratio_mean']
-            ax2_4.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax2_4.set_ylim(ymin=0)
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_flag_change_mean']
-            ax3_4.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax3_4.set_ylim([-2, 2])
-
-
-
-
-        ax0_5.plot(df_4H_data['day_max'], label='day_max')
-        ax0_5.plot(df_4H_data['day_mean'], label='day_mean')
-        ax0_5.plot(df_4H_data['day_min'], label='day_min')
-        ax0_5.set_ylim(ymin=0)
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_std']
-            ax1_5.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax1_5.set_ylim(ymin=0)
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_ratio_std']
-            ax2_5.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax2_5.set_ylim(ymin=0)
-
-        for idx in range(len(colors)):
-            df_temp_data = pd.DataFrame(df_D_des.index, df_D_des.index)
-            df_temp_data[colors[idx]] = df_D_des.loc[(df_D_des['weekday'] == idx), 'day_flag_change_std']
-            ax3_5.scatter(df_temp_data.index, df_temp_data[colors[idx]], c=colors[idx], s=10)
-        ax3_5.set_ylim([-2, 2])
-
-
-
-        # 일별
-        # ax2_0.plot(df_H_data['day_max'], label='day_max')
-        # ax2_0.plot(df_H_data['day_mean'], label='day_mean')
-        # ax2_0.plot(df_H_data['day_min'], label='day_min')
-        #
-        #
-        #
-
-
-        # ax0_3.scatter(df_H_data.index, df_H_data['diff_day_max'], s=10, label='diff_day_max')
-        # ax1_3.scatter(df_H_data.index, df_H_data['diff_day_mean'], s=10, label='diff_day_mean')
-        # ax2_3.scatter(df_H_data.index, df_H_data['diff_day_min'], s=10, label='diff_day_min')
-        #
-
-
-        for ax in fig.axes:
-            plt.sca(ax)
-            plt.xticks(rotation=30)
-
-        # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
-        plt.tight_layout()
-        plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
-        # plt.show()
-        plt.close()
 
 
     print('경과시간 6:', (time.time() - start))
@@ -431,15 +275,15 @@ if __name__ == '__main__':
 
     dir_source = 'C:\\_data\\부하데이터'
 
-    names = []
-    for path, dirs, filenames in os.walk(dir_source):
-        for filename in filenames:
-            names.append(os.path.join(path, filename))
+    # 아래 이외 특이 파일 path
+    # 수원경기본부_남시화변전소_ID18_남시화_3상 : 중간에 갑자기 부하가 높게 치솟은 후 내려온 데이터
+    # 수원경기본부_남시화변전소_ID19_남시화_3상 : 중간 중간 데이터가 갑자기 하락했다 올라오는 데이터
+    # 수원경기본부_신덕은변전소_ID2_신덕은_3상 : 중간 중간 데이터가 갑자기 하락했다 올라오는 데이터
+    filepaths = ['C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
+        , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID15\금촌_3상.xls']
 
-    print(names)
-
-    with Pool(processes=14) as pool:
-        pool.map(plot_pqms_decomposition, names)
+    for filepath in filepaths:
+        pqms_change_detection(filepath)
 
 
 
