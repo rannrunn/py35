@@ -10,7 +10,6 @@ from matplotlib import gridspec
 import os
 import datetime
 import time
-import copy
 
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
@@ -53,6 +52,10 @@ def is_possible(data, col_name='load'):
     return is_possible_data
 
 
+def exponential_smoothing(series, alpha):
+    return sum([alpha * (1 - alpha) ** i * x for i, x in enumerate(reversed(series))])
+
+
 def regularization(df, col, col_reg):
     df[col_reg] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
     return df
@@ -87,25 +90,36 @@ def detection_change_week(df):
     week_num_start = -1
     for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 7):
 
-        print('week_num:', week_num)
-        print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
+        # print('week_num:', week_num)
+        # print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
 
-        if len(df.loc[(df['date_group_week'] == week_num), 'week_range']) <= 1:
+        sr_bool_index = (df['date_group_week'] > week_num_start) & (df['date_group_week'] < (week_num - 1))
+
+        if len(df.loc[sr_bool_index]) <= 1:
             continue
 
+        print('11')
+
         df_temp = pd.DataFrame()
-        df_temp = df.loc[(df['date_group_week'] > week_num_start) & (df['date_group_week'] < (week_num - 1))]
+        df_temp = df.loc[sr_bool_index]
         df_temp.index = range(0, len(df_temp))
 
         train = df_temp['week_range'].values
+
+        print(train)
+
         model = ExponentialSmoothing(train, trend='additive').fit()
         pred = model.predict(start=df_temp.index[-1] + 1, end=df_temp.index[-1] + 1)
 
+        df.loc[(df['date_group_week'] == week_num), 'pred'] = pred
+
         laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / pred
 
-        if laod_range_ratio < 0.714 or laod_range_ratio > 1.4:
+        if laod_range_ratio < 0.769 or laod_range_ratio > 1.3:
             df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range'] = True
             week_num_start = week_num
+
+    print(df)
 
     return df
 
@@ -113,7 +127,7 @@ def detection_change_week(df):
 
 def pqms_change_detection(filepath):
 
-    dir_output = 'C:\\_data\\pqms_change_detection_mmm_v1\\'
+    dir_output = 'C:\\_data\\pqms_change_detection_mmm_one\\'
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -133,7 +147,7 @@ def pqms_change_detection(filepath):
 
 
     # 값이 0과 같거나 작을 경우 np.nan으로 대체
-    df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
+    # df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
 
 
     print('경과시간 1:', (time.time() - start))
@@ -317,8 +331,8 @@ def pqms_change_detection(filepath):
 
         # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
         plt.tight_layout()
-        plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
-        # plt.show()
+        # plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
+        plt.show()
         plt.close()
 
     print('경과시간 6:', (time.time() - start))
@@ -330,16 +344,15 @@ if __name__ == '__main__':
 
     dir_source = 'C:\\_data\\부하데이터'
 
-    names = []
-    for path, dirs, filenames in os.walk(dir_source):
-        for filename in filenames:
-            names.append(os.path.join(path, filename))
+    # 아래 이외 특이 파일 path
+    # 수원경기본부_남시화변전소_ID18_남시화_3상 : 중간에 갑자기 부하가 높게 치솟은 후 내려온 데이터
+    # 수원경기본부_남시화변전소_ID19_남시화_3상 : 중간 중간 데이터가 갑자기 하락했다 올라오는 데이터
+    # 수원경기본부_신덕은변전소_ID2_신덕은_3상 : 중간 중간 데이터가 갑자기 하락했다 올라오는 데이터
+    filepaths = ['C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
+        , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID15\금촌_3상.xls']
 
-    print(names)
-
-    with Pool(processes=14) as pool:
-        pool.map(pqms_change_detection, names)
-
+    for filepath in filepaths:
+        pqms_change_detection(filepath)
 
 
 

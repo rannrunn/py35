@@ -10,12 +10,11 @@ from matplotlib import gridspec
 import os
 import datetime
 import time
+import copy
+
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
 from multiprocessing import Process
-
-import statsmodels.api as sm
-from stldecompose.forecast_funcs import drift
-from stldecompose import decompose, forecast
 
 from multiprocessing import Pool
 
@@ -59,31 +58,65 @@ def regularization(df, col, col_reg):
     return df
 
 
+# def detection_change_week(df):
+#
+#     df['week_flag_change_range'] = False
+#
+#     load_range_mean = None  # 범위의 평균
+#     week_num_start = -1
+#     for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 1):
+#
+#         if len(df.loc[(df['date_group_week'] == week_num), 'week_range']) == 0:
+#             continue
+#
+#         load_range_mean = df.loc[(df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num - 1), 'week_range'].mean()
+#
+#         laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / load_range_mean
+#
+#         if laod_range_ratio < 0.714 or laod_range_ratio > 1.4:
+#             df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range'] = True
+#             week_num_start = week_num
+#
+#     return df
+
+
 def detection_change_week(df):
 
     df['week_flag_change_range'] = False
 
-    load_range_mean = None  # 범위의 평균
     week_num_start = -1
-    for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 1):
+    for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 7):
 
-        if len(df.loc[(df['date_group_week'] == week_num), 'week_range']) == 0:
+        # print('week_num:', week_num)
+        # print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
+
+        sr_bool_index = (df['date_group_week'] > week_num_start) & (df['date_group_week'] < (week_num - 1))
+
+        if len(df.loc[sr_bool_index]) <= 1:
             continue
 
-        load_range_mean = df.loc[(df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num - 1), 'week_range'].mean()
+        print('11')
 
-        laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / load_range_mean
+        df_temp = pd.DataFrame()
+        df_temp = df.loc[sr_bool_index]
+        df_temp.index = range(0, len(df_temp))
 
-        if laod_range_ratio < 0.714 or laod_range_ratio > 1.4:
+        train = df_temp['week_range'].values
+
+        print(train)
+
+        model = ExponentialSmoothing(train, trend='additive').fit()
+        pred = model.predict(start=df_temp.index[-1] + 1, end=df_temp.index[-1] + 1)
+
+        df.loc[(df['date_group_week'] == week_num), 'pred'] = pred
+
+        laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / pred
+
+        if laod_range_ratio < 0.769 or laod_range_ratio > 1.3:
             df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range'] = True
             week_num_start = week_num
 
-    return df
-
-
-def detection_change_day(df):
-
-
+    print(df)
 
     return df
 
@@ -91,7 +124,7 @@ def detection_change_day(df):
 
 def pqms_change_detection(filepath):
 
-    dir_output = 'C:\\_data\\pqms_change_detection_algorithm\\'
+    dir_output = 'C:\\_data\\pqms_change_detection_mmm_one\\'
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -111,7 +144,7 @@ def pqms_change_detection(filepath):
 
 
     # 값이 0과 같거나 작을 경우 np.nan으로 대체
-    df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
+    # df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
 
 
     print('경과시간 1:', (time.time() - start))
@@ -263,11 +296,44 @@ def pqms_change_detection(filepath):
 
 
         colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
-        fig = plt.figure(figsize=(36,14))
+        fig = plt.figure(figsize=(14,9))
+        gs = gridspec.GridSpec(3, 2)
+        ax0_0 = plt.subplot(gs[0, 0])
+        ax1_0 = plt.subplot(gs[1, 0], sharex=ax0_0)
+        ax2_0 = plt.subplot(gs[2, 0], sharex=ax1_0)
 
 
+        ax0_1 = plt.subplot(gs[0, 1], sharex=ax1_0)
+        ax1_1 = plt.subplot(gs[1, 1], sharex=ax1_0)
+        ax2_1 = plt.subplot(gs[2, 1], sharex=ax1_0)
+
+
+        # ax2_1.plot(df_data_decom['weekday'] * 100, label='weekday')
+        ax0_0.plot(df_4H_data['data_week_odd'], 'b')
+        ax0_0.plot(df_4H_data['data_week_even'], 'r')
+        ax0_0.plot(df_4H_data['week_max'])
+        ax0_0.plot(df_4H_data['week_mean'])
+        ax0_0.plot(df_4H_data['week_min'])
+        ax0_0.set_ylim(ymin=0)
+
+
+        ax1_0.plot(df_4H_data.index, df_4H_data['week_flag_change_range'])
+        ax1_0.set_ylim(ymin=0)
+        ax1_0.legend()
+
+
+        for ax in fig.axes:
+            plt.sca(ax)
+            plt.xticks(rotation=30)
+
+        # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
+        plt.tight_layout()
+        # plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
+        plt.show()
+        plt.close()
 
     print('경과시간 6:', (time.time() - start))
+
 
 
 
