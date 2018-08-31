@@ -70,15 +70,28 @@ def regularization(df, col, col_reg):
     return df
 
 
+# 순방향 탐지 및 패턴 그룹 분류 진행
 def detection_change_week_forward_direction(df):
+
+    if len(df) == 0:
+        print('패턴 분류를 위한 데이터가 없습니다.')
+        return df
 
     df['week_flag_change_range_forward'] = False
 
     week_num_start = df['date_group_week'].min()
+    group_num = 0
     class_num = 0
+    df.loc[(df['date_group_week'] == week_num_start), 'group_num'] = group_num
     df.loc[(df['date_group_week'] == week_num_start), 'class_num'] = class_num
-    dict_class_pred = {}
+    dict_group_pred = {}
+    dict_group_pred[group_num] = df.loc[(df['date_group_week'] == week_num_start), 'week_range'].values[0]
     for week_num in range(df['date_group_week'].min() + 7, df['date_group_week'].max() + 1, 7):
+
+        alpha = 0.7
+        ratio_range_min = 0.5
+        ratio_range_max = 1.5
+        ratio_before_mean = 0.2
 
         # print('week_num:', week_num)
         # print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
@@ -95,7 +108,8 @@ def detection_change_week_forward_direction(df):
 
         print(train)
 
-        alpha = 0.7
+
+        before_mean = df.loc[(df['date_group_week'] == week_num - 7), 'week_mean'].values[0]
         y_data = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0]
         pred = exponential_smoothing(train, alpha)
 
@@ -103,49 +117,27 @@ def detection_change_week_forward_direction(df):
 
         load_range_ratio = y_data / pred
 
-        if (load_range_ratio < 0.66666 or load_range_ratio > 1.5) and np.abs(y_data):
+        # 1. 범위 변화 비율을 이용해 판단
+        # 2. 고정 스케일의 차이를 이용해 판단 (추후 적용)
+        if (load_range_ratio < ratio_range_min or load_range_ratio > ratio_range_max) and np.abs(y_data - pred) > before_mean * ratio_before_mean:
             df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range_forward'] = True
             week_num_start = week_num
-            class_num += 1
 
+            group_num += 1
+            class_num = group_num
+
+            # 이전 class 들의 마지막 예측 값과의 차이를 이용해 현재 class를 재구분
+            for idx in range(group_num - 1):
+                class_load_range_ratio = y_data / dict_group_pred[idx]
+                if (class_load_range_ratio >= ratio_range_min and class_load_range_ratio <= ratio_range_max):
+                    class_num = idx
+                    print('class_num:', class_num, 'group_num', group_num)
+                    print('class_num:', class_num, 'group_num', group_num)
+                    print('class_num:', class_num, 'group_num', group_num)
+
+        df.loc[(df['date_group_week'] == week_num), 'group_num'] = group_num
         df.loc[(df['date_group_week'] == week_num), 'class_num'] = class_num
-        dict_class_pred[class_num] = pred
-
-    print(df)
-
-    return df
-
-
-def detection_change_week_backward_direction(df):
-
-    df['week_flag_change_range_backward'] = False
-
-    week_num_start = df['date_group_week'].max()
-    for week_num in range(df['date_group_week'].max() - 7, df['date_group_week'].min() - 1, -7):
-
-        sr_bool_index = (df['date_group_week'] <= week_num_start) & (df['date_group_week'] > week_num)
-
-        print('desc::')
-
-        df_temp = pd.DataFrame()
-        df_temp = df.loc[sr_bool_index]
-        df_temp.index = range(0, len(df_temp))
-
-        train = df_temp['week_range'].values
-
-        print(train)
-
-        alpha = 0.7
-        y_data = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0]
-        pred = exponential_smoothing(train, alpha)
-
-        df.loc[(df['date_group_week'] == week_num), 'pred_backward'] = pred
-
-        load_range_ratio = y_data / pred
-
-        if (load_range_ratio < 0.66666 or load_range_ratio > 1.5) and np.abs(y_data):
-            df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range_backward'] = True
-            week_num_start = week_num
+        dict_group_pred[group_num] = pred
 
     print(df)
 
@@ -153,9 +145,11 @@ def detection_change_week_backward_direction(df):
 
 
 
-def pqms_change_detection(filepath):
+def pqms_change_detection(args):
 
-    dir_output = 'C:\\_data\\pqms_change_detection_mmm_one\\'
+    flag_data_range = args[0]
+    filepath = args[1]
+    dir_output = args[2]
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -210,7 +204,7 @@ def pqms_change_detection(filepath):
         df_4H_data['data_week_even'] = df_4H_data.loc[df_4H_data['date_group_week'] % 2 == 1, 'load_mean']
 
 
-        df_W_des_max = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_max'].describe())
+        df_W_des_max = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_mean'].describe())
         df_W_des_max['date_group_week'] = df_W_des_max.index
         # df_H_max_des_week.rename(columns={'count': 'week_count', 'mean': 'week_mean', 'std': 'week_std', 'min': 'week_min', '25%': 'week_25%', '50%': 'week_50%', '75%': 'week_75%', 'max': 'week_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
         df_W_des_max.rename(columns={'max': 'week_max'}, inplace=True)
@@ -232,7 +226,7 @@ def pqms_change_detection(filepath):
 
 
         # 주별 통계량 min
-        df_W_des_min = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_min'].describe())
+        df_W_des_min = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_mean'].describe())
         df_W_des_min['date_group_week'] = df_W_des_min.index
         df_W_des_min.rename(columns={'min': 'week_min'}, inplace=True)
         df_W_des['week_min'] = df_W_des_min['week_min']
@@ -259,10 +253,8 @@ def pqms_change_detection(filepath):
         # 주단위 패턴 변화 탐지
         # 순방향 탐지
         df_W_des = detection_change_week_forward_direction(df_W_des)
-        # 역방향 탐지
-        df_W_des = detection_change_week_backward_direction(df_W_des)
         # 순방향과 역방향 조합
-        df_W_des['week_flag_change_range'] = df_W_des['week_flag_change_range_forward'] & df_W_des['week_flag_change_range_backward']
+        df_W_des['week_flag_change_range'] = df_W_des['week_flag_change_range_forward']
 
 
 
@@ -360,9 +352,15 @@ def pqms_change_detection(filepath):
         ax1_0.legend()
 
 
-        ax2_0.plot(df_4H_data.index, df_4H_data['class_num'])
+        ax2_0.plot(df_4H_data.index, df_4H_data['group_num'])
         ax2_0.set_ylim(ymin=-1)
         ax2_0.legend()
+
+
+        ax0_1.plot(df_4H_data.index, df_4H_data['class_num'])
+        ax0_1.set_ylim(ymin=-1)
+        ax0_1.legend()
+
 
 
         for ax in fig.axes:
@@ -371,8 +369,10 @@ def pqms_change_detection(filepath):
 
         # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
         plt.tight_layout()
-        # plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
-        plt.show()
+        if flag_data_range == 0:
+            plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
+        elif flag_data_range == 1:
+            plt.show()
         plt.close()
 
     print('경과시간 6:', (time.time() - start))
@@ -380,19 +380,23 @@ def pqms_change_detection(filepath):
 
 
 
+
 if __name__ == '__main__':
 
+    flag_data_range = 1
     dir_source = 'C:\\_data\\부하데이터'
+    dir_output = 'C:\\_data\\pqms_change_detection_mmm_one_v1\\'
 
     # 아래 이외 특이 파일 path
     # 수원경기본부_남시화변전소_ID18_남시화_3상 : 중간에 갑자기 부하가 높게 치솟은 후 내려온 데이터
     # 수원경기본부_남시화변전소_ID19_남시화_3상 : 중간 중간 데이터가 갑자기 하락했다 올라오는 데이터
     # 수원경기본부_신덕은변전소_ID2_신덕은_3상 : 중간 중간 데이터가 갑자기 하락했다 올라오는 데이터
     filepaths = ['C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
-        , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID15\금촌_3상.xls']
+        , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID15\금촌_3상.xls'
+        , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID16\금촌_3상.xls']
 
     for filepath in filepaths:
-        pqms_change_detection(filepath)
+        pqms_change_detection([flag_data_range, filepath, dir_output])
 
 
 

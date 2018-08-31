@@ -1,6 +1,3 @@
-
-
-
 # coding: utf-8
 
 import pandas as pd
@@ -12,7 +9,7 @@ import datetime
 import time
 import copy
 
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 
 from multiprocessing import Process
 
@@ -53,67 +50,106 @@ def is_possible(data, col_name='load'):
     return is_possible_data
 
 
+# Simple Exponential Smoothing
+def exponential_smoothing(series, alpha):
+
+    if len(series) == 0:
+        return 0
+
+    list = []
+    for i, real in enumerate(reversed(series)):
+        weight = alpha * (1 - alpha) ** i
+        list.append(real * weight)
+    list.append(real * ((1 - alpha) ** (i + 1)))
+
+    return sum(list)
+
+
 def regularization(df, col, col_reg):
     df[col_reg] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
     return df
 
 
-# def detection_change_week(df):
-#
-#     df['week_flag_change_range'] = False
-#
-#     load_range_mean = None  # 범위의 평균
-#     week_num_start = -1
-#     for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 1):
-#
-#         if len(df.loc[(df['date_group_week'] == week_num), 'week_range']) == 0:
-#             continue
-#
-#         load_range_mean = df.loc[(df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num - 1), 'week_range'].mean()
-#
-#         laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / load_range_mean
-#
-#         if laod_range_ratio < 0.714 or laod_range_ratio > 1.4:
-#             df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range'] = True
-#             week_num_start = week_num
-#
-#     return df
+# 순방향 탐지 및 패턴 그룹 분류 진행
+def detection_change_week_forward_direction(df):
 
+    if len(df) == 0:
+        print('패턴 분류를 위한 데이터가 없습니다.')
+        return df
 
-def detection_change_week(df):
+    df['week_flag_change_range_forward'] = False
 
-    df['week_flag_change_range'] = False
+    week_num_start = df['date_group_week'].min()
+    group_num = 0
+    class_num = 0
+    df.loc[(df['date_group_week'] == week_num_start), 'group_num'] = group_num
+    df.loc[(df['date_group_week'] == week_num_start), 'class_num'] = class_num
+    dict_group_pred = {}
+    dict_group_pred[group_num] = df.loc[(df['date_group_week'] == week_num_start), 'week_range'].values[0]
+    for week_num in range(df['date_group_week'].min() + 7, df['date_group_week'].max() + 1, 7):
 
-    week_num_start = -1
-    for week_num in range(df['date_group_week'].min(), df['date_group_week'].max() + 1, 7):
+        alpha = 0.7
+        ratio_range_min = 0.65
+        ratio_range_max = 1.35
+        ratio_before_mean = 0.2
 
-        print('week_num:', week_num)
-        print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
+        # print('week_num:', week_num)
+        # print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
 
-        if len(df.loc[(df['date_group_week'] == week_num), 'week_range']) <= 1:
-            continue
+        sr_bool_index = (df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num)
+
+        print('11')
 
         df_temp = pd.DataFrame()
-        df_temp = df.loc[(df['date_group_week'] > week_num_start) & (df['date_group_week'] < (week_num - 1))]
+        df_temp = df.loc[sr_bool_index]
         df_temp.index = range(0, len(df_temp))
 
         train = df_temp['week_range'].values
-        model = ExponentialSmoothing(train, trend='additive').fit()
-        pred = model.predict(start=df_temp.index[-1] + 1, end=df_temp.index[-1] + 1)
 
-        laod_range_ratio = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0] / pred
+        print(train)
 
-        if laod_range_ratio < 0.714 or laod_range_ratio > 1.4:
-            df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range'] = True
+
+        before_mean = df.loc[(df['date_group_week'] == week_num - 7), 'week_mean'].values[0]
+        y_data = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0]
+        pred = exponential_smoothing(train, alpha)
+
+        df.loc[(df['date_group_week'] == week_num), 'pred_forward'] = pred
+
+        load_range_ratio = y_data / pred
+
+        # 1. 범위 변화 비율을 이용해 판단
+        # 2. 고정 스케일의 차이를 이용해 판단 (추후 적용)
+        if (load_range_ratio < ratio_range_min or load_range_ratio > ratio_range_max) and np.abs(y_data - pred) > before_mean * ratio_before_mean:
+            df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range_forward'] = True
             week_num_start = week_num
+
+            group_num += 1
+            class_num = group_num
+
+            # 이전 class 들의 마지막 예측 값과의 차이를 이용해 현재 class를 재구분
+            for idx in range(group_num - 1):
+                class_load_range_ratio = y_data / dict_group_pred[idx]
+                if (class_load_range_ratio >= ratio_range_min and class_load_range_ratio <= ratio_range_max) and np.abs(y_data - pred) <= before_mean * ratio_before_mean:
+                    class_num = idx
+                    print('class_num:', class_num, 'group_num', group_num)
+                    print('class_num:', class_num, 'group_num', group_num)
+                    print('class_num:', class_num, 'group_num', group_num)
+
+        df.loc[(df['date_group_week'] == week_num), 'group_num'] = group_num
+        df.loc[(df['date_group_week'] == week_num), 'class_num'] = class_num
+        dict_group_pred[group_num] = pred
+
+    print(df)
 
     return df
 
 
 
-def pqms_change_detection(filepath):
+def pqms_change_detection(args):
 
-    dir_output = 'C:\\_data\\pqms_change_detection_mmm_v1\\'
+    flag_data_range = args[0]
+    filepath = args[1]
+    dir_output = args[2]
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -133,7 +169,7 @@ def pqms_change_detection(filepath):
 
 
     # 값이 0과 같거나 작을 경우 np.nan으로 대체
-    df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
+    # df_temp.loc[df_temp['load'] <= 0, 'load'] = np.nan
 
 
     print('경과시간 1:', (time.time() - start))
@@ -168,7 +204,7 @@ def pqms_change_detection(filepath):
         df_4H_data['data_week_even'] = df_4H_data.loc[df_4H_data['date_group_week'] % 2 == 1, 'load_mean']
 
 
-        df_W_des_max = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_max'].describe())
+        df_W_des_max = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_mean'].describe())
         df_W_des_max['date_group_week'] = df_W_des_max.index
         # df_H_max_des_week.rename(columns={'count': 'week_count', 'mean': 'week_mean', 'std': 'week_std', 'min': 'week_min', '25%': 'week_25%', '50%': 'week_50%', '75%': 'week_75%', 'max': 'week_max', 'yyyymmdd': 'yyyymmdd'}, inplace=True)
         df_W_des_max.rename(columns={'max': 'week_max'}, inplace=True)
@@ -190,7 +226,7 @@ def pqms_change_detection(filepath):
 
 
         # 주별 통계량 min
-        df_W_des_min = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_min'].describe())
+        df_W_des_min = pd.DataFrame(df_4H_data.groupby('date_group_week')['load_mean'].describe())
         df_W_des_min['date_group_week'] = df_W_des_min.index
         df_W_des_min.rename(columns={'min': 'week_min'}, inplace=True)
         df_W_des['week_min'] = df_W_des_min['week_min']
@@ -215,7 +251,12 @@ def pqms_change_detection(filepath):
 
 
         # 주단위 패턴 변화 탐지
-        df_W_des = detection_change_week(df_W_des)
+        # 순방향 탐지
+        df_W_des = detection_change_week_forward_direction(df_W_des)
+        # 순방향과 역방향 조합
+        df_W_des['week_flag_change_range'] = df_W_des['week_flag_change_range_forward']
+
+
 
 
         # 주단위 계산 결과 데이터 병합
@@ -311,14 +352,27 @@ def pqms_change_detection(filepath):
         ax1_0.legend()
 
 
+        ax2_0.plot(df_4H_data.index, df_4H_data['group_num'])
+        ax2_0.set_ylim(ymin=-1)
+        ax2_0.legend()
+
+
+        ax0_1.plot(df_4H_data.index, df_4H_data['class_num'])
+        ax0_1.set_ylim(ymin=-1)
+        ax0_1.legend()
+
+
+
         for ax in fig.axes:
             plt.sca(ax)
             plt.xticks(rotation=30)
 
         # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
         plt.tight_layout()
-        plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
-        # plt.show()
+        if flag_data_range == 0:
+            plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
+        elif flag_data_range == 1:
+            plt.show()
         plt.close()
 
     print('경과시간 6:', (time.time() - start))
@@ -326,14 +380,18 @@ def pqms_change_detection(filepath):
 
 
 
+
+
 if __name__ == '__main__':
 
+    flag_data_range = 0
     dir_source = 'C:\\_data\\부하데이터'
+    dir_output = 'C:\\_data\\pqms_change_detection_mmm_all_v1\\'
 
     names = []
     for path, dirs, filenames in os.walk(dir_source):
         for filename in filenames:
-            names.append(os.path.join(path, filename))
+            names.append([flag_data_range, os.path.join(path, filename), dir_output])
 
     print(names)
 
