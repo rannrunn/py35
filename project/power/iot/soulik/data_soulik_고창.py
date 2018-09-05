@@ -6,7 +6,7 @@ import time
 cnt = 0
 cnt_line = 0
 
-f = open('C:\\광주.csv', 'r')
+f = open('C:\\고창.csv', 'r')
 while True:
     cnt += 1
     line = f.readline()
@@ -31,21 +31,21 @@ f.close()
 
 
 def write(list, oid):
-    f1 = open('C:\\_data\\광주_' + oid + '.csv', 'w')
+    f1 = open('C:\\_data\\고창_' + oid + '.csv', 'w')
     for item in list:
         f1.write(item)
     f1.close()
     # print(list)
-    print('write:', 'C:\\_data\\광주_' + oid + '.csv')
+    print('write:', 'C:\\_data\\고창_' + oid + '.csv')
 
-# 광주
-list = [1, 4861, 7342, 7750]
+# 고창
+list = [1, 7556, 12061, 13671, 17197, 18093, 19037, 20016]
 list_line_all = []
 list_line_data = []
 cnt = 0
 cnt_line = 0
 
-f = open('C:\\광주.csv', 'r')
+f = open('C:\\고창.csv', 'r')
 oid = ''
 while True:
     cnt += 1
@@ -69,31 +69,29 @@ f.close()
 
 
 
-
-
+df = pd.DataFrame( columns=['time', 'oid', 'temp', 'lux', 'uvc', 'ntc', 'pitch', 'roll', 'var_x', 'var_y', 'var_z', 'geomag_x', 'geomag_y', 'geomag_z', 'usn', 'battery'])
+# df.set_index(pd.to_datetime(df['time']), inplace=True)
+# df.index
 cnt = 0
 cnt_all = 0
-for path, dirs, filenames in os.walk('C:\\_data\\IoT'):
+for path, dirs, filenames in os.walk('C:\\_data\\IoT_고창'):
     print(filenames)
     for filename in filenames:
-
+        print(filename)
         if filename.find('.bak') > -1:
             continue
 
         filepath = os.path.join(path, filename)
-        cnt = 0
-        f = open(filepath, 'r')
-        while True:
-            line = f.readline()
-            if not line:
-                print('filename:', filename, ', cnt:', cnt)
-                cnt_all += cnt
-                break
-            cnt += 1
-        df = pd.read_csv(filepath)
-        df = df[df.duplicated(['time'], keep=False)]
+        df_temp = pd.read_csv(filepath)
+        print(df_temp)
+        # df_temp.set_index(pd.to_datetime(df['time']), inplace=True)
+        df = pd.concat([df, df_temp], axis=0)
 
-        print(df[df.iloc[:, 0] == 'oid'])
+df = df[['time', 'oid', 'temp', 'lux', 'uvc', 'ntc', 'pitch', 'roll', 'var_x', 'var_y', 'var_z', 'geomag_x', 'geomag_y', 'geomag_z', 'usn', 'battery']]
+df.set_index(pd.to_datetime(df['time']), inplace=True)
+df.sort_index(ascending=True, inplace=True)
+
+df.to_csv('C:\\_data\\고창_통합.csv', index=False)
 
 
 print('전체 라인:', cnt_all)
