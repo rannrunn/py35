@@ -8,7 +8,10 @@ from matplotlib import gridspec
 import os
 import datetime
 import time
-import copy
+from matplotlib import font_manager, rc
+
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
+rc('font', family=font_name)
 
 
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing
@@ -87,6 +90,103 @@ def get_group_last_week_mean_of_minmax(df, dict_group):
     return df.loc[df['group_num'] == dict_group['group_num'], 'week_mean_of_minmax'].values[-1]
 
 
+def calculate_change_point_rating(df, dict_parameter, week_num_start, week_num, week_range, week_mean_of_minmax):
+
+    score_change_point = 0
+
+    alpha = dict_parameter['alpha']
+    threshold_ratio_range_min = dict_parameter['threshold_ratio_range_min']
+    threshold_ratio_range_max = dict_parameter['threshold_ratio_range_max']
+    threshold_ratio_before_mean = dict_parameter['threshold_ratio_before_mean']
+    threshold_ratio_before_mean_two = dict_parameter['threshold_ratio_before_mean_two']
+    threshold_fixed_load = dict_parameter['threshold_fixed_load']
+    threshold_fixed_mean = dict_parameter['threshold_fixed_mean']
+
+    threshold_ratio_before_mean = cal_threshold_ratio_before_mean(threshold_ratio_before_mean, week_mean_of_minmax)
+
+    sr_bool_index = (df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num)
+
+    print('11')
+
+    df_temp = pd.DataFrame()
+    df_temp = df.loc[sr_bool_index]
+    df_temp.index = range(0, len(df_temp))
+
+    train_week_range = df_temp['week_range'].values
+    train_week_max = df_temp['week_max'].values
+    train_week_min = df_temp['week_min'].values
+    train_week_mean = df_temp['week_mean'].values
+
+    print(train_week_range)
+
+
+    before_week_mean_of_minmax = df.loc[(df['date_group_week'] == week_num - 7), 'week_mean_of_minmax'].values[0]
+    # 이전 주들의 데이터를 이용해 현재 주의 week_range 예측
+    pred_week_range = exponential_smoothing(train_week_range, alpha)
+    pred_week_max = exponential_smoothing(train_week_range, alpha)
+    pred_week_min = exponential_smoothing(train_week_max, alpha)
+    pred_week_mean = exponential_smoothing(train_week_min, alpha)
+
+    df.loc[(df['date_group_week'] == week_num), 'pred'] = pred_week_range
+
+    load_range_ratio = week_range / pred_week_range
+
+    # 1. 범위 변화 비율을 이용해 판단
+    # 2. 고정 스케일의 차이를 이용해 판단 (추후 적용)
+    check_one = load_range_ratio < threshold_ratio_range_min or load_range_ratio > threshold_ratio_range_max
+    check_two = np.abs(week_range - pred_week_range) > before_week_mean_of_minmax * threshold_ratio_before_mean
+    check_two_five = np.abs(week_range - pred_week_range) > threshold_fixed_load
+    # check_one_two = load_range_ratio < threshold_ratio_range_min * 1.2 or load_range_ratio > threshold_ratio_range_max * 0.833333
+    check_three = np.abs(before_week_mean_of_minmax - week_mean_of_minmax) > before_week_mean_of_minmax * threshold_ratio_before_mean_two
+    check_three_five = np.abs(before_week_mean_of_minmax - week_mean_of_minmax) > threshold_fixed_mean
+
+
+    # 디텍션 조건 : 최댓값 변화율
+    check_four = df.loc[(df['date_group_week'] == week_num), 'pred'] = pred_week_range
+    df.loc[(df['date_group_week'] == week_num), 'check_one'] = check_one
+    df.loc[(df['date_group_week'] == week_num), 'check_two'] = check_two
+    df.loc[(df['date_group_week'] == week_num), 'check_three'] = check_three
+
+    if (check_one and check_two and check_two_five) or (check_three and check_three_five):
+        score_change_point = 110
+
+    return df, score_change_point
+
+
+def calculate_class_rating(df, dict_parameter, list_group, idx, week_range, week_mean_of_minmax):
+
+    score_class = 0
+
+    alpha = dict_parameter['alpha']
+    threshold_ratio_range_min = dict_parameter['threshold_ratio_range_min']
+    threshold_ratio_range_max = dict_parameter['threshold_ratio_range_max']
+    threshold_ratio_before_mean = dict_parameter['threshold_ratio_before_mean']
+    threshold_ratio_before_mean_two = dict_parameter['threshold_ratio_before_mean_two']
+    threshold_fixed_load = dict_parameter['threshold_fixed_load']
+    threshold_fixed_mean = dict_parameter['threshold_fixed_mean']
+
+    threshold_ratio_before_mean = cal_threshold_ratio_before_mean(threshold_ratio_before_mean, week_mean_of_minmax)
+
+    group_pred_after_week_range = get_group_pred_after_week_range(df, list_group[idx], alpha)
+    group_last_week_mean_of_minmax = get_group_last_week_mean_of_minmax(df, list_group[idx])
+    check_2_one = (week_range / group_pred_after_week_range) >= threshold_ratio_range_min and (week_range / group_pred_after_week_range) <= threshold_ratio_range_max
+    check_2_two = np.abs(week_range - group_pred_after_week_range) <= group_last_week_mean_of_minmax * threshold_ratio_before_mean
+    check_2_two_five = np.abs(week_range - group_pred_after_week_range) <= threshold_fixed_load
+    # check_2_one_two = (week_range / group_pred_after_week_range) >= threshold_ratio_range_min * 0.769 and (week_range / group_pred_after_week_range) <= threshold_ratio_range_max * 1.3
+    check_2_three = np.abs(group_last_week_mean_of_minmax - week_mean_of_minmax) <= group_last_week_mean_of_minmax * threshold_ratio_before_mean_two
+    check_2_three_five = np.abs(group_last_week_mean_of_minmax - week_mean_of_minmax) <= threshold_fixed_mean
+
+    if (check_2_one or check_2_two or check_2_two_five) and (check_2_three or check_2_three_five):
+        score_class = 110
+
+    return score_class
+
+
+def cal_threshold_ratio_before_mean(threshold_ratio_before_mean, week_mean_of_minmax):
+    if week_mean_of_minmax > 10000:
+        week_mean_of_minmax = 10000
+    return threshold_ratio_before_mean - 0.1 * (week_mean_of_minmax / 10000)
+
 
 
 
@@ -99,11 +199,16 @@ def detection_change_week_forward_direction(df):
 
     df['week_flag_change_range_forward'] = False
 
-    alpha = 0.7
-    threshold_ratio_range_min = 0.714
-    threshold_ratio_range_max = 1.4
-    threshold_ratio_before_mean = 0.30
-    threshold_ratio_before_mean_two = 0.30
+    dict_parameter = {}
+    dict_parameter['alpha'] = 0.7
+    dict_parameter['threshold_ratio_range_min'] = 0.6
+    dict_parameter['threshold_ratio_range_max'] = 1.5
+    dict_parameter['threshold_ratio_before_mean'] = 0.30
+    dict_parameter['threshold_ratio_before_mean_two'] = 0.30
+    dict_parameter['threshold_fixed_load'] = 1500
+    dict_parameter['threshold_fixed_mean'] = 1250
+
+
 
     week_num_start = df['date_group_week'].min()
     group_num = 0
@@ -117,39 +222,12 @@ def detection_change_week_forward_direction(df):
         # print('week_num:', week_num)
         # print('range:', len(df.loc[(df['date_group_week'] == week_num), 'week_range']))
 
-        sr_bool_index = (df['date_group_week'] >= week_num_start) & (df['date_group_week'] < week_num)
-
-        print('11')
-
-        df_temp = pd.DataFrame()
-        df_temp = df.loc[sr_bool_index]
-        df_temp.index = range(0, len(df_temp))
-
-        train = df_temp['week_range'].values
-
-        print(train)
-
-
-        before_week_mean_of_minmax = df.loc[(df['date_group_week'] == week_num - 7), 'week_mean_of_minmax'].values[0]
         week_mean_of_minmax = df.loc[(df['date_group_week'] == week_num), 'week_mean_of_minmax'].values[0]
         week_range = df.loc[(df['date_group_week'] == week_num), 'week_range'].values[0]
-        # 이전 주들의 데이터를 이용해 현재 주의 week_range 예측
-        pred_week_range = exponential_smoothing(train, alpha)
 
-        df.loc[(df['date_group_week'] == week_num), 'pred'] = pred_week_range
+        df, score_change_point = calculate_change_point_rating(df, dict_parameter, week_num_start, week_num, week_range, week_mean_of_minmax)
 
-        load_range_ratio = week_range / pred_week_range
-
-        # 1. 범위 변화 비율을 이용해 판단
-        # 2. 고정 스케일의 차이를 이용해 판단 (추후 적용)
-        check_one = load_range_ratio < threshold_ratio_range_min or load_range_ratio > threshold_ratio_range_max
-        check_one_two = load_range_ratio < threshold_ratio_range_min * 1.3 or load_range_ratio > threshold_ratio_range_max * 0.769
-        check_two = np.abs(week_range - pred_week_range) > before_week_mean_of_minmax * threshold_ratio_before_mean
-        check_three = np.abs(before_week_mean_of_minmax - week_mean_of_minmax) > before_week_mean_of_minmax * threshold_ratio_before_mean_two
-        df.loc[(df['date_group_week'] == week_num), 'check_one'] = check_one
-        df.loc[(df['date_group_week'] == week_num), 'check_two'] = check_two
-        df.loc[(df['date_group_week'] == week_num), 'check_three'] = check_three
-        if (check_one and check_two) or (check_one_two and check_three):
+        if score_change_point > 100:
             df.loc[(df['date_group_week'] == week_num), 'week_flag_change_range_forward'] = True
             week_num_start = week_num
 
@@ -158,13 +236,9 @@ def detection_change_week_forward_direction(df):
 
             # 이전 class 들의 마지막 예측 값과의 차이를 이용해 현재 class를 재구분
             for idx in range(group_num - 1):
-                group_pred_after_week_range = get_group_pred_after_week_range(df, list_group[idx], alpha)
-                group_last_week_mean_of_minmax = get_group_last_week_mean_of_minmax(df, list_group[idx])
-                check_2_one = (week_range / group_pred_after_week_range) >= threshold_ratio_range_min and (week_range / group_pred_after_week_range) <= threshold_ratio_range_max
-                check_2_one_two = (week_range / group_pred_after_week_range) >= threshold_ratio_range_min * 0.769 and (week_range / group_pred_after_week_range) <= threshold_ratio_range_max * 1.3
-                check_2_two = np.abs(week_range - group_pred_after_week_range) <= group_last_week_mean_of_minmax * threshold_ratio_before_mean
-                check_2_three = np.abs(group_last_week_mean_of_minmax - week_mean_of_minmax) <= group_last_week_mean_of_minmax * threshold_ratio_before_mean_two
-                if (check_2_one or check_2_two) and (check_2_one_two and check_2_three):
+
+                scoer_class = calculate_class_rating(df, dict_parameter, list_group, idx, week_range, week_mean_of_minmax)
+                if scoer_class > 100:
                     class_num = list_group[idx]['class_num']
             # 삽입
             list_group.append(set_dict_group(group_num, class_num, week_range, week_mean_of_minmax))
@@ -187,6 +261,10 @@ def pqms_change_detection(args):
     flag_plot = args[0]
     filepath = args[1]
     dir_output = args[2]
+    flag_one_file = args[3]
+
+    if filepath != 'C:\_data\부하데이터\수원경기본부\문발변전소\ID3\문발_3상.xls' and flag_one_file:
+        return
 
     if not os.path.isdir(dir_output):
         os.makedirs(dir_output)
@@ -195,6 +273,7 @@ def pqms_change_detection(args):
 
     filename = os.path.basename(filepath)
     dirname = os.path.dirname(filepath)
+    output_filename = filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png')
 
 
     if not filename.find('3상') > -1: #
@@ -341,20 +420,6 @@ def pqms_change_detection(args):
         # 일단위 범위 계산
         df_D_des['day_range'] = df_D_des['day_max'] - df_D_des['day_min']
 
-        # 일단위 범위 변화 탐지
-        df_D_des['day_ratio_range'] = df_D_des['day_range'] / df_D_des['day_range'].shift(7)
-        df_D_des['day_flag_change_range'] = (df_D_des['day_ratio_range'] < 0.666) | (df_D_des['day_ratio_range'] > 1.5)
-
-        # 일단위 평균 변화 탐지
-        df_D_des['day_ratio_mean'] = df_D_des['day_mean'] / df_D_des['day_mean'].shift(7)
-        df_D_des['day_flag_change_mean'] = (df_D_des['day_ratio_mean'] < 0.714) | (df_D_des['day_ratio_mean'] > 1.4)
-
-        # 일단위 표준편차 변화 탐지
-        df_D_des['day_ratio_std'] = df_D_des['day_std'] / df_D_des['day_std'].shift(7)
-        df_D_des['day_flag_change_std'] = (df_D_des['day_ratio_std'] < 0.666) | (df_D_des['day_ratio_std'] > 1.5)
-
-
-
         df_D_des['diff_day_max'] = df_D_des['day_max'].diff()
         df_D_des['diff_day_mean'] = df_D_des['day_mean'].diff()
         df_D_des['diff_day_min'] = df_D_des['day_min'].diff()
@@ -365,8 +430,11 @@ def pqms_change_detection(args):
         print('경과시간 5:', (time.time() - start))
 
 
-        colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
+
+        colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet', 'gray', 'black', 'pink', 'brown']
+
         fig = plt.figure(figsize=(14,9))
+
         gs = gridspec.GridSpec(3, 2)
         ax0_0 = plt.subplot(gs[0, 0])
         ax1_0 = plt.subplot(gs[1, 0], sharex=ax0_0)
@@ -379,6 +447,7 @@ def pqms_change_detection(args):
 
 
         # ax2_1.plot(df_data_decom['weekday'] * 100, label='weekday')
+        ax0_0.set_title(output_filename)
         ax0_0.plot(df_4H_data['data_week_odd'], 'b')
         ax0_0.plot(df_4H_data['data_week_even'], 'r')
         ax0_0.plot(df_4H_data['week_max'])
@@ -402,33 +471,42 @@ def pqms_change_detection(args):
         ax0_1.legend()
 
 
+        for idx in range(int(df_W_des['class_num'].max()) + 1):
+            df_temp = pd.DataFrame(index=df_4H_data.index)
+            df_temp['load_mean'] = df_4H_data.loc[df_4H_data['class_num'] == idx, 'load_mean']
+            ax1_1.plot(df_temp['load_mean'], color=colors[idx])
+        ax1_1.set_ylim(ymin=-1)
+
+
 
         for ax in fig.axes:
             plt.sca(ax)
             plt.xticks(rotation=30)
 
         # xticks를 잘리지 않고 출력하기 위한 코드 : plt.tight_layout()
-        plt.tight_layout()
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
         if flag_plot == 'save':
-            plt.savefig(dir_output + filepath.replace('C:\\_data\\부하데이터\\', '').replace('\\', '_').replace('.xls', '.png'), bbox_inches='tight')
+            plt.savefig(dir_output + output_filename, bbox_inches='tight')
         elif flag_plot == 'show':
+            plt.show()
+        elif flag_plot == 'all':
+            plt.savefig(dir_output + output_filename, bbox_inches='tight')
             plt.show()
         plt.close()
 
     print('경과시간 6:', (time.time() - start))
-
-
 
 if __name__ == '__main__':
 
     flag_plot = 'save' # save, show
     dir_source = 'C:\\_data\\부하데이터'
     dir_output = 'C:\\_data\\pqms_change_detection_mmm_all_v1\\'
+    flag_one_file = True
 
     names = []
     for path, dirs, filenames in os.walk(dir_source):
         for filename in filenames:
-            names.append([flag_plot, os.path.join(path, filename), dir_output])
+            names.append([flag_plot, os.path.join(path, filename), dir_output, flag_one_file])
 
     print(names)
 
