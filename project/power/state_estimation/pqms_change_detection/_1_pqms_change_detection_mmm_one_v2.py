@@ -138,7 +138,7 @@ def calculate_threshold_range_min(threshold_range_min, week_mean_of_maxmin):
     return threshold_range_min + 0.4 * (week_mean_of_maxmin / 8000)
 
 
-def calculate_change_point_score(df, dict_parameter, list_class_num, week_num_start, week_num, week_range, week_mean_of_maxmin):
+def calculate_change_point(df, dict_parameter, list_class_num, week_num_start, week_num, week_range, week_mean_of_maxmin):
 
     score_change_point = 0
 
@@ -186,7 +186,7 @@ def calculate_change_point_score(df, dict_parameter, list_class_num, week_num_st
     return df, score_change_point
 
 
-def calculate_class_score(df, dict_parameter, class_num, week_range, week_mean_of_maxmin):
+def calculate_class(df, dict_parameter, class_num, week_range, week_mean_of_maxmin):
 
     score_class = 0
 
@@ -195,6 +195,7 @@ def calculate_class_score(df, dict_parameter, class_num, week_range, week_mean_o
     threshold_ratio_range_max = dict_parameter['threshold_ratio_range_max']
     threshold_fixed_week_range = dict_parameter['threshold_fixed_week_range']
     threshold_fixed_week_mean_of_maxmin = dict_parameter['threshold_fixed_week_mean_of_maxmin']
+    difference_ratio_mean_of_maxmin = dict_parameter['difference_ratio_mean_of_maxmin']
 
 
     threshold_ratio_range_min = calculate_threshold_range_min(threshold_ratio_range_min, week_mean_of_maxmin)
@@ -212,7 +213,7 @@ def calculate_class_score(df, dict_parameter, class_num, week_range, week_mean_o
     check_range_using_ratio = (week_range / group_pred_after_week_range) >= threshold_ratio_range_min and (week_range / group_pred_after_week_range) <= threshold_ratio_range_max
     check_range_using_fixed_range = np.abs(week_range - group_pred_after_week_range) <= threshold_fixed_week_range
     check_mean_using_fixed_mean = np.abs(group_pred_week_mean_of_maxmin - week_mean_of_maxmin) <= threshold_fixed_week_mean_of_maxmin
-    check_mean_using_range = np.abs(group_pred_week_mean_of_maxmin - week_mean_of_maxmin) <= week_range / 2
+    check_mean_using_range = np.abs(group_pred_week_mean_of_maxmin - week_mean_of_maxmin) <= week_range / difference_ratio_mean_of_maxmin
 
 
     if (check_range_using_ratio or check_range_using_fixed_range) and (check_mean_using_fixed_mean) and (check_mean_using_range):
@@ -224,6 +225,16 @@ def calculate_class_score(df, dict_parameter, class_num, week_range, week_mean_o
     return score_class, sum_of_condition
 
 
+def weighted_dict_parameter(dict_parameter):
+    return_dict_parameter = dict_parameter.copy()
+    return_dict_parameter['threshold_ratio_range_min'] = return_dict_parameter['threshold_ratio_range_min'] * 0.8
+    return_dict_parameter['threshold_ratio_range_max'] = return_dict_parameter['threshold_ratio_range_max'] * 1.2
+    return_dict_parameter['threshold_fixed_week_range'] = return_dict_parameter['threshold_fixed_week_range'] * 1.2
+    return_dict_parameter['threshold_fixed_week_mean_of_maxmin'] = return_dict_parameter['threshold_fixed_week_mean_of_maxmin'] * 1.2
+    return_dict_parameter['difference_ratio_mean_of_maxmin'] = return_dict_parameter['difference_ratio_mean_of_maxmin'] * 0.8
+    return return_dict_parameter
+
+
 # 탐지된 클래스 결과를 가지고 재조정 조정이 일어날 경우 조정이 일어나는 지점부터 마지막까지 모두 클래스 변경
 def reconstruction_class(df, dict_parameter):
     list_group_num = list(df.drop_duplicates(['group_num'])['group_num'].values)
@@ -233,33 +244,39 @@ def reconstruction_class(df, dict_parameter):
 
         df_group_before = df.loc[df['group_num'] < item_group_num]
 
-        list_group_before_class_num = list(df_group_before.drop_duplicates(['class_num'])['class_num'].values)
-        list_group_before_class_num.sort()
+        list_class_num_group_before = list(df_group_before.drop_duplicates(['class_num'])['class_num'].values)
+        list_class_num_group_before.sort()
 
-        for item_class_num in list_group_before_class_num:
+        for item_class_num in list_class_num_group_before:
             # 아래 Data Frame은 이전 그룹에 대한 클래스 범위라는 것을 잊지 말아라
             df_class_before = df_group_before.loc[df_group_before['class_num'] == item_class_num]
-
             list_index = list(df_group_now.index)
             total_pass_class_score = 0
-            for idx in range(1, len(list_index)):
+            bool_first_pass_class = False
+            for idx in range(len(list_index)):
                 sr_group_now_by_index = df_group_now.loc[list_index[idx]]
                 week_range = sr_group_now_by_index['week_range']
                 week_mean_of_maxmin = sr_group_now_by_index['week_mean_of_maxmin']
 
+                # 첫번째
+                if idx == 0 :
+                    score_class, _ = calculate_class(df_class_before, weighted_dict_parameter(dict_parameter), item_class_num, week_range, week_mean_of_maxmin)
+                    if score_class > 100:
+                        bool_first_pass_class = True
 
-                print(df_group_now.loc[np.min(df_group_now.index.values)])
-                # _ 를 쓰는 이유는 조건식에 필요하지 않기 때문
-                _, class_before_sum_of_condition = calculate_class_score(df_class_before, dict_parameter, item_class_num, week_range, week_mean_of_maxmin)
-                _, class_now_sum_of_condition = calculate_class_score(df_group_now.loc[np.min(df_group_now.index.values):np.min(df_group_now.index.values) + 1], dict_parameter, df_group_now['class_num'].max(), week_range, week_mean_of_maxmin)
-
-                if class_now_sum_of_condition > class_before_sum_of_condition:
-                    total_pass_class_score += 1
-
+                # 첫번째 이후
+                if idx > 0:
+                    _, class_before_sum_of_condition = calculate_class(df_class_before, dict_parameter, item_class_num, week_range, week_mean_of_maxmin)
+                    _, class_now_sum_of_condition = calculate_class(df_group_now.loc[np.min(df_group_now.index.values):np.min(df_group_now.index.values) + 1], dict_parameter, df_group_now['class_num'].max(), week_range, week_mean_of_maxmin)
+                    if class_now_sum_of_condition > class_before_sum_of_condition:
+                        total_pass_class_score += 1
 
             # 현재 로직은 if 조건이 모든 클래스에 적용되지만 결국엔 마지막 클래스만 영향을 미칠 수 밖에 없음
-            if total_pass_class_score == len(df_group_now) - 1:
+            if total_pass_class_score > 0 and total_pass_class_score == len(df_group_now) - 1:
                 df.loc[np.min(df_group_now.index.values) + 7:np.max(df_group_now.index.values), 'class_num'] = item_class_num
+                if bool_first_pass_class == True:
+                    df.loc[np.min(df_group_now.index.values), 'class_num'] = item_class_num
+
 
     return df
 
@@ -279,6 +296,7 @@ def detection_change_week_forward_direction(df):
     dict_parameter['threshold_ratio_range_max'] = 1.6
     dict_parameter['threshold_fixed_week_range'] = 1750
     dict_parameter['threshold_fixed_week_mean_of_maxmin'] = 1500
+    dict_parameter['difference_ratio_mean_of_maxmin'] = 2
 
 
     week_num_start = df['group_week'].min()
@@ -296,7 +314,7 @@ def detection_change_week_forward_direction(df):
         list_class_num = [item['class_num'] for item in list_group]
         list_class_num.sort()
 
-        df, score_change_point = calculate_change_point_score(df, dict_parameter, list_class_num, week_num_start, week_num, week_range, week_mean_of_maxmin)
+        df, score_change_point = calculate_change_point(df, dict_parameter, list_class_num, week_num_start, week_num, week_range, week_mean_of_maxmin)
 
         if score_change_point > 100:
             df.loc[(df['group_week'] == week_num), 'flag_change_week'] = True
@@ -307,7 +325,7 @@ def detection_change_week_forward_direction(df):
 
             # 이전 class 들의 마지막 예측 값과의 차이를 이용해 현재 class를 재구분
             for item_class_num in list_class_num:
-                score_class, _ = calculate_class_score(df, dict_parameter, item_class_num, week_range, week_mean_of_maxmin)
+                score_class, _ = calculate_class(df, dict_parameter, item_class_num, week_range, week_mean_of_maxmin)
                 if score_class > 100:
                     class_num = item_class_num
             # 삽입
@@ -504,7 +522,7 @@ if __name__ == '__main__':
     filepath = []
     if flag_file == '0':
         filepaths = [
-            'C:\_data\부하데이터\수원경기본부\이천변전소\ID18\인천_3상.xls'
+            'C:\_data\부하데이터\수원경기본부\이천변전소\ID13\인천_3상.xls'
         ]
 
     if flag_file == '1':
