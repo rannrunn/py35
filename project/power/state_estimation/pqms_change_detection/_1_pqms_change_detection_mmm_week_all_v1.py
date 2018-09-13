@@ -282,7 +282,7 @@ def reconstruction_class(df, dict_parameter):
 
 
 # 순방향 탐지 및 패턴 그룹 분류 진행
-def detection_change_week_forward_direction(df):
+def detection_change_week(df):
 
     if len(df) == 0:
         print('패턴 분류를 위한 데이터가 없습니다.')
@@ -422,7 +422,7 @@ def pqms_change_detection(args):
 
         # 주단위 패턴 변화 탐지
         # 순방향 탐지
-        df_W_des = detection_change_week_forward_direction(df_W_des)
+        df_W_des = detection_change_week(df_W_des)
 
 
         # 주단위 계산 결과 데이터 병합
@@ -514,83 +514,21 @@ def pqms_change_detection(args):
 
 if __name__ == '__main__':
 
-    flag_plot = 'all'
+    flag_plot = 'save' # save, show
     dir_source = 'C:\\_data\\부하데이터'
-    dir_output = 'C:\\_data\\pqms_change_detection_mmm_one_v2\\'
-    flag_file = '2' # 0, 1, 2
+    dir_output = 'C:\\_data\\pqms_change_detection_mmm_week_all_v1\\'
 
-    filepath = []
-    if flag_file == '0':
-        filepaths = [
-            'C:\_data\부하데이터\수원경기본부\이천변전소\ID13\인천_3상.xls'
-        ]
+    names = []
+    for path, dirs, filenames in os.walk(dir_source):
+        for filename in filenames:
+            names.append([flag_plot, os.path.join(path, filename), dir_output])
 
-    if flag_file == '1':
-        filepaths = [
-            'C:\_data\부하데이터\수원경기본부\금촌변전소\ID19\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID4\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID8\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID17\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID2\서시화_3상.xls'
-        ]
+    print(names)
 
-    if flag_file == '2':
-        filepaths = [
-            'C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID2\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID3\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID5\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID7\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID9\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID11\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID15\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID16\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\금촌변전소\ID19\금촌_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID12\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID18\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID19\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID20\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID21\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\남시화변전소\ID22\남시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID3\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID4\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID6\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID8\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID10\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문발변전소\ID12\문발_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID7\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID8\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID10\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID14\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID16\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID17\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID18\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\문산변전소\ID19\문산_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\북시화변전소\ID18\북시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\북시화변전소\ID19\북시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\북시화변전소\ID21\북시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\북시화변전소\ID22\북시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\북시화변전소\ID24\북시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\북시화변전소\ID25\북시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID2\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID7\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID9\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID15\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID16\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID21\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\서시화변전소\ID22\서시화_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\신덕은변전소\ID2\신덕은_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\율현변전소\ID2\율현_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\율현변전소\ID6\율현_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\율현변전소\ID9\율현_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\율현변전소\ID10\율현_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\이천변전소\ID4\인천_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\이천변전소\ID9\인천_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\이천변전소\ID13\인천_3상.xls'
-            , 'C:\_data\부하데이터\수원경기본부\이천변전소\ID14\인천_3상.xls'
-        ]
+    with Pool(processes=14) as pool:
+        pool.map(pqms_change_detection, names)
 
 
 
-    for filepath in filepaths:
-        pqms_change_detection([flag_plot, filepath, dir_output])
+
+
