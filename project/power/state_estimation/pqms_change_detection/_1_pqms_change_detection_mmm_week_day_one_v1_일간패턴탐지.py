@@ -645,7 +645,7 @@ def pqms_change_detection(args):
         print('경과시간 5:', (time.time() - start))
 
 
-        colors = ['blue', 'orange', 'blue', 'green', 'blue', 'indigo', 'violet', 'gray', 'black', 'pink', 'brown', 'darkgray', 'darkgreen']
+        colors = ['red', 'orange', 'blue', 'green', 'blue', 'indigo', 'violet', 'gray', 'black', 'pink', 'brown', 'darkgray', 'darkgreen']
 
         fig = plt.figure(figsize=(14,9))
 
