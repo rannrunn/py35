@@ -23,6 +23,7 @@ def load_dataset(datasource: str) -> (numpy.ndarray, MinMaxScaler):
     """
     # load the dataset
     dataframe = pandas.read_csv(datasource, usecols=[1])
+    dataframe = dataframe.iloc[0:1440]
     dataframe = dataframe.fillna(method='pad')
     dataset = dataframe.values
     dataset = dataset.astype('float32')
@@ -137,13 +138,18 @@ def make_forecast(model: Sequential, look_back_buffer: numpy.ndarray, timesteps:
 
 
 def main():
-    datasource = 'international-airline-passengers.csv'
+    datasource = 'ev_2_col.csv'
     dataset, scaler = load_dataset(datasource)
 
     # split into train and test sets
     look_back = int(len(dataset) * 0.20)
     train_size = int(len(dataset) * 0.70)
+    print(look_back)
+    print(train_size)
     train, test = split_dataset(dataset, train_size, look_back)
+
+    print(train.shape)
+    print(test.shape)
 
     # reshape into X=t and Y=t+1
     train_x, train_y = create_dataset(train, look_back)
@@ -156,8 +162,10 @@ def main():
     # create and fit Multilayer Perceptron model
     batch_size = 1
     model = build_model(look_back, batch_size=batch_size)
-    model = load_model('model.h5')
+    # model = load_model('model.h5')
     for _ in trange(100, desc='fitting model\t', mininterval=1.0):
+        print(train_x.shape)
+        print(train_y.shape)
         model.fit(train_x, train_y, nb_epoch=1, batch_size=batch_size, verbose=0, shuffle=False)
         model.reset_states()
 
